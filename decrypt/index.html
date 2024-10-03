@@ -112,15 +112,20 @@
     <h1>QR & Data Decryption</h1>
 
     <div class="section">
-        <textarea id="inputTextDecrypt" placeholder="Enter Base64 encrypted text to decrypt"></textarea>
-        <input type="text" id="keyDecrypt" placeholder="Enter decryption key"/>
-        <button id="decryptDecompressBtn">Decrypt & Decompress</button>
+        <textarea id="inputTextDecrypt" placeholder="Enter Data to Decrypt"></textarea>
+        <input type="text" id="keyDecrypt" placeholder="Enter Key"/>
+        <button id="decryptDecompressBtn">Decrypt</button>
 
-        <h3>Data:</h3>
-        <textarea id="decryptedOutput" readonly></textarea>
-        <button id="goHomeBtn" class="button">Make New QR Code</button>
+        <!-- Decrypted Output Section (initially hidden) -->
+        <div id="decryptedOutputSection" style="display:none;">
+            <h3>Data:</h3>
+            <textarea id="decryptedOutput" readonly></textarea>
+        </div>
+
+        <button id="goHomeBtn" class="button">Make a New QR Code</button>
     </div>
 </div>
+
 
 <footer>
     &copy; 2024 Kyle B. All rights reserved.
@@ -235,6 +240,9 @@
             // Display decrypted and decompressed text
             document.getElementById('decryptedOutput').value = originalText;
 
+            // Show the output section
+            document.getElementById('decryptedOutputSection').style.display = 'block';
+
             // Auto-resize the output textarea
             autoResizeBox(document.getElementById('decryptedOutput'));
         } catch (error) {
@@ -243,26 +251,7 @@
         }
     }
 
-
-    // Apply auto-resize to all textareas and input fields
-    const inputFields = [
-        document.getElementById('inputTextDecrypt'),
-        document.getElementById('keyDecrypt'),
-        document.getElementById('decryptedOutput')
-    ];
-
-    inputFields.forEach(applyAutoResize);
-
-    // Check if 'data' parameter is present in the URL
-    window.addEventListener('DOMContentLoaded', async () => {
-        const base64EncryptedData = getQueryParam('data');
-        if (base64EncryptedData) {
-            document.getElementById('inputTextDecrypt').value = base64EncryptedData;
-            autoResizeBox(document.getElementById('inputTextDecrypt'));
-        }
-    });
-
-    // Decryption Button Event Listener
+    // Event listener for decryption button
     document.getElementById('decryptDecompressBtn').addEventListener('click', async () => {
         const key = document.getElementById('keyDecrypt').value;
         const base64EncryptedData = document.getElementById('inputTextDecrypt').value;
@@ -273,6 +262,21 @@
         }
 
         await performDecryption(base64EncryptedData, key);
+    });
+
+    // Clear and hide the output section if both input fields are empty
+    const inputFields = [
+        document.getElementById('inputTextDecrypt'),
+        document.getElementById('keyDecrypt')
+    ];
+
+    inputFields.forEach(input => {
+        input.addEventListener('input', () => {
+            if (!document.getElementById('inputTextDecrypt').value && !document.getElementById('keyDecrypt').value) {
+                document.getElementById('decryptedOutput').value = '';  // Clear the output
+                document.getElementById('decryptedOutputSection').style.display = 'none';  // Hide the section
+            }
+        });
     });
 </script>
 
