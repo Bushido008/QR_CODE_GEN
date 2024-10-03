@@ -484,12 +484,12 @@ if ($local_commit !== $remote_commit) {
         }
     }
 
-    // Function to trim data to fit into QR code (with controlled timing)
+    // Function to trim data to fit into QR code (optimized to get as close as possible to the limit)
     async function trimDataToFit() {
-        let textToEncrypt = document.getElementById('inputTextEncrypt').value;
+        let originalText = document.getElementById('inputTextEncrypt').value;
         const key = document.getElementById('keyEncrypt').value;
 
-        if (!textToEncrypt || !key) {
+        if (!originalText || !key) {
             return;
         }
 
@@ -503,64 +503,56 @@ if ($local_commit !== $remote_commit) {
         // Allow UI to update before starting the trimming loop
         await new Promise(resolve => setTimeout(resolve, 50));
 
-        let dataSize = parseInt(document.getElementById('dataSize').textContent);
-        document.getElementById('currentSize').textContent = dataSize;
+        let start = 0;
+        let end = originalText.length;
+        let bestFitText = '';
+        let bestDataSize = 0;
 
-        // Calculate total amount of data to trim (in bytes)
-        let totalExcessSize = dataSize - qrCapacity;
+        // Binary search to find the maximum length that fits
+        while (start <= end) {
+            let mid = Math.floor((start + end) / 2);
+            let trimmedText = originalText.substring(0, mid);
 
-        // Calculate total trimming time based on excess size
-        // Map totalExcessSize from 0 to maxExcessSize to 1 to 5 seconds
-        const maxExcessSize = 5000; // Maximum expected excess size in bytes
-        const minTrimTime = 1000;   // Minimum total trimming time in milliseconds (1 second)
-        const maxTrimTime = 5000;   // Maximum total trimming time in milliseconds (5 seconds)
-
-        // Ensure totalExcessSize is not negative
-        totalExcessSize = Math.max(totalExcessSize, 0);
-
-        // Calculate desired total trimming time
-        let totalTrimTime = minTrimTime + ((maxTrimTime - minTrimTime) * Math.min(totalExcessSize, maxExcessSize) / maxExcessSize);
-
-        // Calculate number of iterations based on desired total trimming time and a base delay
-        const baseDelay = 100; // Base delay between iterations in milliseconds
-        let iterations = Math.ceil(totalTrimTime / baseDelay);
-
-        // Calculate characters to remove per iteration
-        let totalCharsToRemove = textToEncrypt.length;
-        let charsPerIteration = Math.ceil(totalCharsToRemove / iterations);
-
-        // Ensure at least one character is removed per iteration
-        charsPerIteration = Math.max(charsPerIteration, 1);
-
-        // Trimming loop
-        while (textToEncrypt.length > 0) {
-            // Remove charsPerIteration characters from the end
-            textToEncrypt = textToEncrypt.slice(0, -charsPerIteration);
-
-            // Update the input field
-            document.getElementById('inputTextEncrypt').value = textToEncrypt;
+            // Update the input field temporarily
+            document.getElementById('inputTextEncrypt').value = trimmedText;
             autoResizeBox(document.getElementById('inputTextEncrypt'));
 
             // Recalculate encryption and check if data fits
             await updateEncryption();
 
             // Update current size in overlay
-            dataSize = parseInt(document.getElementById('dataSize').textContent);
+            let dataSize = parseInt(document.getElementById('dataSize').textContent);
             document.getElementById('currentSize').textContent = dataSize;
 
-            // Check if data now fits into QR code
-            if (dataSize <= qrCapacity) {
-                // Data now fits
-                break;
+            if (dataSize > qrCapacity) {
+                // Need to trim more characters
+                end = mid - 1;
+            } else {
+                // Data fits, store it as the best fit so far
+                bestFitText = trimmedText;
+                bestDataSize = dataSize;
+                // Try to include more characters
+                start = mid + 1;
             }
 
-            // Delay between iterations to control total trimming time
-            await new Promise(resolve => setTimeout(resolve, baseDelay));
+            // Small delay to allow UI to update (optional)
+            await new Promise(resolve => setTimeout(resolve, 10));
         }
+
+        // Update the input field with the best fit text
+        document.getElementById('inputTextEncrypt').value = bestFitText;
+        autoResizeBox(document.getElementById('inputTextEncrypt'));
+
+        // Recalculate encryption to reflect the final trimmed text
+        await updateEncryption();
+
+        // Update current size in overlay
+        document.getElementById('currentSize').textContent = bestDataSize;
 
         // Hide the trimming overlay animation
         document.getElementById('trimmingOverlay').style.display = 'none';
     }
+
 
     // Apply auto-resize to all textareas and input fields
     const inputFields = [
