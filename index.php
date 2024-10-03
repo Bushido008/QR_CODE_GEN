@@ -51,7 +51,7 @@ if ($local_commit !== $remote_commit) {
             max-width: 800px;
             margin: 0 auto;
         }
-        textarea, input[type="text"] {
+        textarea, input[type="text"], select {
             width: 100%;
             padding: 12px;
             margin-bottom: 15px;
@@ -62,7 +62,7 @@ if ($local_commit !== $remote_commit) {
             overflow: hidden; /* Disable scroll bars */
             box-sizing: border-box;
         }
-        textarea:focus, input[type="text"]:focus {
+        textarea:focus, input[type="text"]:focus, select:focus {
             border-color: #3498db;
             outline: none;
         }
@@ -178,6 +178,14 @@ if ($local_commit !== $remote_commit) {
         <h1>QR & Data Encryption</h1>
         <textarea id="inputTextEncrypt" placeholder="Enter Data to Encrypt (Text, Emojis, Symbols, etc.)"></textarea>
         <input type="text" id="keyEncrypt" placeholder="Enter Key"/>
+
+        <!-- New Error Correction Level Selection -->
+        <select id="errorCorrectionLevel">
+            <option value="L">Low (L) - 7% error correction</option>
+            <option value="M" selected>Medium (M) - 15% error correction</option>
+            <option value="Q">Quartile (Q) - 25% error correction</option>
+            <option value="H">High (H) - 30% error correction</option>
+        </select>
 
         <!-- Encrypted Output Section -->
         <div id="encryptedOutputSection" style="display:none;">
@@ -296,30 +304,40 @@ if ($local_commit !== $remote_commit) {
     }
 
     // Generate QR Code from data
-    function generateQRCode(data, suppressUI = false) {
+    function generateQRCode(data, eccLevel = 'M', suppressUI = false) {
         const canvas = document.getElementById('qrcodeCanvas');
         let qr;
+        const errorCorrectionLevels = {
+            'L': qrcodegen.QrCode.Ecc.LOW,
+            'M': qrcodegen.QrCode.Ecc.MEDIUM,
+            'Q': qrcodegen.QrCode.Ecc.QUARTILE,
+            'H': qrcodegen.QrCode.Ecc.HIGH
+        };
+
         try {
-            qr = qrcodegen.QrCode.encodeText(data, qrcodegen.QrCode.Ecc.MEDIUM, qrcodegen.QrCode.MIN_VERSION, qrcodegen.QrCode.MAX_VERSION, -1, true);
+            qr = qrcodegen.QrCode.encodeText(
+                data,
+                errorCorrectionLevels[eccLevel],
+                qrcodegen.QrCode.MIN_VERSION,
+                qrcodegen.QrCode.MAX_VERSION,
+                -1,
+                true
+            );
         } catch (e) {
             // Data is too big for QR code
             return null;
         }
 
         if (!suppressUI) {
-            const scale = 4; // Adjust the scale (size of each module)
-            const border = 4; // Adjust the border size
-
-            // Calculate the size of the QR code
+            const scale = 4;
+            const border = 4;
             const size = (qr.size + border * 2) * scale;
             canvas.width = size;
             canvas.height = size;
-
             const ctx = canvas.getContext('2d');
             ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(0, 0, size, size);
 
-            // Draw the QR code modules
             for (let y = 0; y < qr.size; y++) {
                 for (let x = 0; x < qr.size; x++) {
                     if (qr.getModule(x, y)) {
@@ -329,11 +347,10 @@ if ($local_commit !== $remote_commit) {
                 }
             }
 
-            // After drawing, hide the canvas and show the image
             convertCanvasToImage();
         }
 
-        return qr.version; // Return QR code version
+        return qr.version;
     }
 
     // Convert canvas to image and make the download link available
@@ -365,6 +382,7 @@ if ($local_commit !== $remote_commit) {
     async function updateEncryption() {
         const textToEncrypt = document.getElementById('inputTextEncrypt').value;
         const key = document.getElementById('keyEncrypt').value;
+        const eccLevel = document.getElementById('errorCorrectionLevel').value;
 
         // Hide everything if either input or key is empty
         if (!textToEncrypt || !key) {
@@ -438,11 +456,8 @@ if ($local_commit !== $remote_commit) {
             const dataBytes = encoder.encode(decryptionLink);
             const dataSize = dataBytes.length;
 
-            // QR Code capacity is variable, so we'll update it after QR code generation
-            document.getElementById('dataSize').textContent = dataSize;
-
             // Try to generate and display the QR code with the decryption link
-            const version = generateQRCode(decryptionLink);
+            const version = generateQRCode(decryptionLink, eccLevel);
 
             if (version === null) {
                 // If QR code generation failed
@@ -462,9 +477,7 @@ if ($local_commit !== $remote_commit) {
                 document.getElementById('decryptionLinkSection').style.display = 'block';
 
                 // Update QR Code Capacity and Data Used
-                // QR Code capacity varies depending on the version and error correction level
-                // We'll use the version returned to estimate capacity
-                const qrCapacity = getQrCodeCapacity(version);
+                const qrCapacity = getQrCodeCapacity(version, eccLevel);
                 document.getElementById('qrCapacity').textContent = qrCapacity;
                 document.getElementById('qrCapacityCopy').textContent = qrCapacity; // Update the copy
                 document.getElementById('dataUsed').textContent = dataSize;
@@ -475,26 +488,60 @@ if ($local_commit !== $remote_commit) {
             alert('An error occurred during encryption.');
         }
     }
+
     // Function to get QR code capacity based on version and error correction level
-    function getQrCodeCapacity(version) {
-        // Maximum data capacity for byte mode with error correction level M (15%)
+    function getQrCodeCapacity(version, eccLevel) {
+        // Maximum data capacity for byte mode based on error correction level
         const capacityTable = {
-            1: 14,   2: 26,    3: 42,    4: 62,    5: 84,
-            6: 106,  7: 122,   8: 152,   9: 180,   10: 213,
-            11: 251, 12: 287,  13: 331,  14: 362,  15: 412,
-            16: 450, 17: 504,  18: 560,  19: 624,  20: 666,
-            21: 711, 22: 779,  23: 857,  24: 911,  25: 997,
-            26: 1059,27: 1125, 28: 1190, 29: 1264, 30: 1370,
-            31: 1452,32: 1538, 33: 1628, 34: 1722, 35: 1809,
-            36: 1911,37: 1989, 38: 2099, 39: 2213, 40: 2331
+            'L': {
+                1: 17,   2: 32,   3: 53,   4: 78,   5: 106,
+                6: 134,  7: 154,  8: 192,  9: 230, 10: 271,
+                11: 321, 12: 367, 13: 425, 14: 458, 15: 520,
+                16: 586, 17: 644, 18: 718, 19: 792, 20: 858,
+                21: 929, 22: 1003,23: 1091,24: 1171,25: 1273,
+                26: 1367,27: 1465,28: 1528,29: 1628,30: 1732,
+                31: 1840,32: 1952,33: 2068,34: 2188,35: 2303,
+                36: 2431,37: 2563,38: 2699,39: 2809,40: 2953
+            },
+            'M': {
+                1: 14,   2: 26,   3: 42,   4: 62,   5: 84,
+                6: 106,  7: 122,  8: 152,  9: 180, 10: 213,
+                11: 251, 12: 287, 13: 331, 14: 362, 15: 412,
+                16: 450, 17: 504, 18: 560, 19: 624, 20: 666,
+                21: 711, 22: 779, 23: 857, 24: 911, 25: 997,
+                26: 1059,27: 1125,28: 1190,29: 1264,30: 1370,
+                31: 1452,32: 1538,33: 1628,34: 1722,35: 1809,
+                36: 1911,37: 1989,38: 2099,39: 2213,40: 2331
+            },
+            'Q': {
+                1: 11,   2: 20,   3: 32,   4: 46,   5: 60,
+                6: 74,   7: 86,   8: 108,  9: 130, 10: 151,
+                11: 177, 12: 203, 13: 241, 14: 258, 15: 292,
+                16: 322, 17: 364, 18: 394, 19: 442, 20: 482,
+                21: 509, 22: 565, 23: 611, 24: 661, 25: 715,
+                26: 751, 27: 805, 28: 868, 29: 908, 30: 982,
+                31: 1030,32: 1112,33: 1168,34: 1228,35: 1283,
+                36: 1351,37: 1423,38: 1499,39: 1579,40: 1663
+            },
+            'H': {
+                1: 7,    2: 14,   3: 24,   4: 34,   5: 44,
+                6: 58,   7: 64,   8: 84,   9: 98,   10: 119,
+                11: 137, 12: 155, 13: 177, 14: 194, 15: 220,
+                16: 250, 17: 280, 18: 310, 19: 338, 20: 382,
+                21: 403, 22: 439, 23: 461, 24: 511, 25: 535,
+                26: 593, 27: 625, 28: 658, 29: 698, 30: 742,
+                31: 790, 32: 842, 33: 898, 34: 958, 35: 983,
+                36: 1051,37: 1093,38: 1139,39: 1219,40: 1273
+            }
         };
-        return capacityTable[version] || 'Unknown';
+        return capacityTable[eccLevel][version] || 'Unknown';
     }
 
-    // Function to trim data to fit into QR code (ensuring QR code generation succeeds)
+    // Function to trim data to fit into QR code
     async function trimDataToFit() {
         let originalText = document.getElementById('inputTextEncrypt').value;
         const key = document.getElementById('keyEncrypt').value;
+        const eccLevel = document.getElementById('errorCorrectionLevel').value;
 
         if (!originalText || !key) {
             return;
@@ -527,7 +574,7 @@ if ($local_commit !== $remote_commit) {
             let testText = originalText.substring(0, mid);
 
             // Test encryption and QR code generation without updating the UI
-            let result = await testEncryption(testText, key);
+            let result = await testEncryption(testText, key, eccLevel);
 
             // Update current size in overlay
             document.getElementById('currentSize').textContent = result.dataSize;
@@ -567,7 +614,7 @@ if ($local_commit !== $remote_commit) {
     }
 
     // Function to test encryption and QR code generation without updating the UI
-    async function testEncryption(textToEncrypt, key) {
+    async function testEncryption(textToEncrypt, key, eccLevel) {
         try {
             let dataToEncrypt;
             let compressionFlag;
@@ -611,7 +658,7 @@ if ($local_commit !== $remote_commit) {
 
             // Try to generate QR code without updating the UI
             let qrCodeSuccess = false;
-            const qrVersion = generateQRCode(decryptionLink, true); // Suppress UI updates
+            const qrVersion = generateQRCode(decryptionLink, eccLevel, true); // Suppress UI updates
             if (qrVersion !== null) {
                 qrCodeSuccess = true;
             }
@@ -641,6 +688,7 @@ if ($local_commit !== $remote_commit) {
     // Add input event listeners to update encryption live
     document.getElementById('inputTextEncrypt').addEventListener('input', updateEncryption);
     document.getElementById('keyEncrypt').addEventListener('input', updateEncryption);
+    document.getElementById('errorCorrectionLevel').addEventListener('change', updateEncryption);
 
     // Add click event listener to the Trim button
     document.getElementById('trimButton').addEventListener('click', trimDataToFit);
