@@ -194,7 +194,7 @@ if ($local_commit !== $remote_commit) {
                 Data is too big to encode in a QR code.
             </div>
             <!-- Trim Button -->
-            <button id="trimButton" class="center-button" style="display:none;">Trim Data to Fit</button>
+            <button id="trimButton" class="center-button" style="display:none;">Automatically Trim Data to Fit</button>
         </div>
 
         <!-- QR Code Display Section -->
