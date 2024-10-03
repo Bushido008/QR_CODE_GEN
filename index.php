@@ -219,7 +219,7 @@ if ($local_commit !== $remote_commit) {
         <p>Trimming data to fit...</p>
         <div id="byteInfo">
             Current Size: <span id="currentSize">0</span> bytes<br>
-            Target Size: <span id="targetSize">0</span> bytes
+            Target Size: <span id="targetSize">Variable</span> bytes
         </div>
     </div>
 </div>
@@ -296,7 +296,7 @@ if ($local_commit !== $remote_commit) {
     }
 
     // Generate QR Code from data
-    function generateQRCode(data) {
+    function generateQRCode(data, suppressUI = false) {
         const canvas = document.getElementById('qrcodeCanvas');
         let qr;
         try {
@@ -306,30 +306,32 @@ if ($local_commit !== $remote_commit) {
             return null;
         }
 
-        const scale = 4; // Adjust the scale (size of each module)
-        const border = 4; // Adjust the border size
+        if (!suppressUI) {
+            const scale = 4; // Adjust the scale (size of each module)
+            const border = 4; // Adjust the border size
 
-        // Calculate the size of the QR code
-        const size = (qr.size + border * 2) * scale;
-        canvas.width = size;
-        canvas.height = size;
+            // Calculate the size of the QR code
+            const size = (qr.size + border * 2) * scale;
+            canvas.width = size;
+            canvas.height = size;
 
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, size, size);
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, size, size);
 
-        // Draw the QR code modules
-        for (let y = 0; y < qr.size; y++) {
-            for (let x = 0; x < qr.size; x++) {
-                if (qr.getModule(x, y)) {
-                    ctx.fillStyle = '#000000';
-                    ctx.fillRect((x + border) * scale, (y + border) * scale, scale, scale);
+            // Draw the QR code modules
+            for (let y = 0; y < qr.size; y++) {
+                for (let x = 0; x < qr.size; x++) {
+                    if (qr.getModule(x, y)) {
+                        ctx.fillStyle = '#000000';
+                        ctx.fillRect((x + border) * scale, (y + border) * scale, scale, scale);
+                    }
                 }
             }
-        }
 
-        // After drawing, hide the canvas and show the image
-        convertCanvasToImage();
+            // After drawing, hide the canvas and show the image
+            convertCanvasToImage();
+        }
 
         return qr.version; // Return QR code version
     }
@@ -436,34 +438,10 @@ if ($local_commit !== $remote_commit) {
             const dataBytes = encoder.encode(decryptionLink);
             const dataSize = dataBytes.length;
 
-            // QR Code capacity in bytes for version 40, error correction level M
-            const qrCapacity = 2331; // Maximum capacity in bytes for byte mode
-
-            // Update the data size and capacity display
+            // QR Code capacity is variable, so we'll update it after QR code generation
             document.getElementById('dataSize').textContent = dataSize;
-            document.getElementById('qrCapacity').textContent = qrCapacity;
-            document.getElementById('qrCapacityCopy').textContent = qrCapacity; // Update the copy
-            document.getElementById('dataUsed').textContent = dataSize;
 
-            if (dataSize > qrCapacity) {
-                // Data is too big for QR code
-                document.getElementById('qrErrorMessage').style.display = 'block';
-                document.getElementById('decryptionLinkSection').style.display = 'none';
-                document.getElementById('qrCodeSection').style.display = 'none';
-                document.getElementById('downloadQrBtn').style.display = 'none';
-                document.getElementById('trimButton').style.display = 'block'; // Show Trim button
-                return;
-            } else {
-                document.getElementById('qrErrorMessage').style.display = 'none';
-                document.getElementById('trimButton').style.display = 'none'; // Hide Trim button if data fits
-            }
-
-            // Update decryption link
-            document.getElementById('decryptionLink').href = decryptionLink;
-            document.getElementById('decryptionLink').textContent = 'Decryption Link';
-            document.getElementById('decryptionLinkSection').style.display = 'block';
-
-            // Generate and display the QR code with the decryption link
+            // Try to generate and display the QR code with the decryption link
             const version = generateQRCode(decryptionLink);
 
             if (version === null) {
@@ -472,10 +450,24 @@ if ($local_commit !== $remote_commit) {
                 document.getElementById('qrCodeSection').style.display = 'none';
                 document.getElementById('downloadQrBtn').style.display = 'none';
                 document.getElementById('trimButton').style.display = 'block'; // Show Trim button
+                document.getElementById('decryptionLinkSection').style.display = 'none';
             } else {
                 document.getElementById('qrCodeSection').style.display = 'block';
                 document.getElementById('qrErrorMessage').style.display = 'none';
                 document.getElementById('trimButton').style.display = 'none'; // Hide Trim button if data fits
+
+                // Update decryption link
+                document.getElementById('decryptionLink').href = decryptionLink;
+                document.getElementById('decryptionLink').textContent = 'Decryption Link';
+                document.getElementById('decryptionLinkSection').style.display = 'block';
+
+                // Update QR Code Capacity and Data Used
+                // QR Code capacity varies depending on the version and error correction level
+                // We'll use the version returned to estimate capacity
+                const qrCapacity = getQrCodeCapacity(version);
+                document.getElementById('qrCapacity').textContent = qrCapacity;
+                document.getElementById('qrCapacityCopy').textContent = qrCapacity; // Update the copy
+                document.getElementById('dataUsed').textContent = dataSize;
             }
 
         } catch (error) {
@@ -484,7 +476,20 @@ if ($local_commit !== $remote_commit) {
         }
     }
 
-    // Function to trim data to fit into QR code (ensuring final data fits under QR code limit)
+    // Function to get QR code capacity based on version and error correction level
+    function getQrCodeCapacity(version) {
+        // This is a simplified estimation using maximum capacity for byte mode with error correction level M
+        const capacityTable = {
+            1: 17, 2: 32, 3: 53, 4: 78, 5: 106, 6: 134, 7: 154, 8: 192, 9: 230, 10: 271,
+            11: 321, 12: 367, 13: 425, 14: 458, 15: 520, 16: 586, 17: 644, 18: 718, 19: 792,
+            20: 858, 21: 929, 22: 1003, 23: 1091, 24: 1171, 25: 1273, 26: 1367, 27: 1465,
+            28: 1528, 29: 1628, 30: 1732, 31: 1840, 32: 1952, 33: 2068, 34: 2188, 35: 2303,
+            36: 2431, 37: 2563, 38: 2699, 39: 2809, 40: 2953
+        };
+        return capacityTable[version] || 'Unknown';
+    }
+
+    // Function to trim data to fit into QR code (ensuring QR code generation succeeds)
     async function trimDataToFit() {
         let originalText = document.getElementById('inputTextEncrypt').value;
         const key = document.getElementById('keyEncrypt').value;
@@ -496,9 +501,9 @@ if ($local_commit !== $remote_commit) {
         // Show the trimming overlay animation
         document.getElementById('trimmingOverlay').style.display = 'flex';
 
-        // Set target size
-        const qrCapacity = parseInt(document.getElementById('qrCapacity').textContent);
-        document.getElementById('targetSize').textContent = qrCapacity;
+        // Set target size (will be updated dynamically)
+        document.getElementById('targetSize').textContent = 'Variable';
+        document.getElementById('currentSize').textContent = 'Calculating...';
 
         // Allow UI to update before starting the trimming loop
         await new Promise(resolve => setTimeout(resolve, 50));
@@ -507,85 +512,119 @@ if ($local_commit !== $remote_commit) {
         let maxLength = originalText.length;
         let minLength = 0;
         let bestFitText = '';
-        let bestDataSize = Number.MAX_SAFE_INTEGER;
         let bestLength = 0;
 
-        // Start with the full text
-        let currentLength = maxLength;
-
         // Set a limit for the number of iterations to prevent infinite loops
-        const maxIterations = 100; // Increased to allow more iterations
+        const maxIterations = 100;
         let iteration = 0;
 
-        let dataFits = false; // Flag to check if any data fits
-
-        while (iteration < maxIterations) {
+        while (minLength <= maxLength && iteration < maxIterations) {
             iteration++;
 
-            // Get the current text to test
-            let testText = originalText.substring(0, currentLength);
+            let mid = Math.floor((minLength + maxLength) / 2);
+            let testText = originalText.substring(0, mid);
 
-            // Update the input field temporarily
-            document.getElementById('inputTextEncrypt').value = testText;
-            autoResizeBox(document.getElementById('inputTextEncrypt'));
-
-            // Recalculate encryption and check if data fits
-            await updateEncryption();
+            // Test encryption and QR code generation without updating the UI
+            let result = await testEncryption(testText, key);
 
             // Update current size in overlay
-            let dataSize = parseInt(document.getElementById('dataSize').textContent);
-            document.getElementById('currentSize').textContent = dataSize;
+            document.getElementById('currentSize').textContent = result.dataSize;
 
-            if (dataSize <= qrCapacity) {
-                // Data fits, check if it's the best fit
-                dataFits = true;
-                if (currentLength >= bestLength) {
-                    bestFitText = testText;
-                    bestDataSize = dataSize;
-                    bestLength = currentLength;
-                }
-                // Try to include more characters
-                minLength = currentLength + 1;
+            if (result.qrCodeSuccess) {
+                // Data fits and QR code generation succeeded
+                bestFitText = testText;
+                bestLength = mid;
+                minLength = mid + 1; // Try to include more characters
             } else {
-                // Data doesn't fit, need to trim more characters
-                maxLength = currentLength - 1;
+                // Data doesn't fit or QR code generation failed
+                maxLength = mid - 1; // Try with fewer characters
             }
-
-            // Adjust current length
-            if (minLength > maxLength) {
-                // Can't find a better fit
-                break;
-            }
-            currentLength = Math.floor((minLength + maxLength) / 2);
 
             // Small delay to allow UI to update (optional)
             await new Promise(resolve => setTimeout(resolve, 10));
         }
 
-        if (dataFits) {
+        if (bestFitText !== '') {
             // Update the input field with the best fit text
             document.getElementById('inputTextEncrypt').value = bestFitText;
             autoResizeBox(document.getElementById('inputTextEncrypt'));
 
-            // Recalculate encryption to reflect the final trimmed text
+            // Update the encryption and UI with the best fit text
             await updateEncryption();
-
-            // Update current size in overlay
-            document.getElementById('currentSize').textContent = bestDataSize;
         } else {
-            // No data fits, set input to empty string
+            // No valid QR code could be generated even with empty input
             document.getElementById('inputTextEncrypt').value = '';
             autoResizeBox(document.getElementById('inputTextEncrypt'));
 
-            // Recalculate encryption with empty input
+            // Update encryption with empty input
             await updateEncryption();
-
-            // Update current size in overlay
-            document.getElementById('currentSize').textContent = '0';
         }
 
         // Hide the trimming overlay animation
         document.getElementById('trimmingOverlay').style.display = 'none';
+    }
+
+    // Function to test encryption and QR code generation without updating the UI
+    async function testEncryption(textToEncrypt, key) {
+        try {
+            let dataToEncrypt;
+            let compressionFlag;
+
+            if (textToEncrypt.length > 20) {  // Compress only if the text is longer than 20 characters
+                dataToEncrypt = LZString.compressToUint8Array(textToEncrypt);
+                compressionFlag = 1; // Compression applied
+            } else {
+                const encoder = new TextEncoder();
+                dataToEncrypt = encoder.encode(textToEncrypt);
+                compressionFlag = 0; // No compression
+            }
+
+            // Generate a random salt
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+
+            // Derive AES-256 Key from the provided key
+            const encryptionKey = await deriveKey(key, salt);
+
+            // Encrypt the data
+            const { encryptedData, iv } = await encryptData(encryptionKey, dataToEncrypt);
+
+            // Prepare the combined data
+            // Structure: [compressionFlag][salt][iv][encryptedData]
+            const combinedData = new Uint8Array(1 + salt.byteLength + iv.byteLength + encryptedData.byteLength);
+            combinedData[0] = compressionFlag;
+            combinedData.set(salt, 1);
+            combinedData.set(iv, 17); // 1 (flag) + 16 (salt)
+            combinedData.set(encryptedData, 29); // 1 (flag) + 16 (salt) + 12 (iv)
+
+            const base64EncryptedData = uint8ArrayToBase64(combinedData);
+
+            // Generate Decryption Link
+            const urlEncodedData = encodeURIComponent(base64EncryptedData);
+            const decryptionLink = `${window.location.origin}/decrypt?data=${urlEncodedData}`;
+
+            // Compute data size in bytes for the decryption link
+            const encoder = new TextEncoder();
+            const dataBytes = encoder.encode(decryptionLink);
+            const dataSize = dataBytes.length;
+
+            // Try to generate QR code without updating the UI
+            let qrCodeSuccess = false;
+            const qrVersion = generateQRCode(decryptionLink, true); // Suppress UI updates
+            if (qrVersion !== null) {
+                qrCodeSuccess = true;
+            }
+
+            return {
+                dataSize: dataSize,
+                qrCodeSuccess: qrCodeSuccess
+            };
+
+        } catch (error) {
+            return {
+                dataSize: 0,
+                qrCodeSuccess: false
+            };
+        }
     }
 
     // Apply auto-resize to all textareas and input fields
