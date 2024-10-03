@@ -151,7 +151,7 @@ if ($local_commit !== $remote_commit) {
             <div id="dataInfo">
                 <p>Data Size: <span id="dataSize"></span> bytes</p>
                 <p>QR Code Capacity: <span id="qrCapacity"></span> bytes</p>
-                <p>Used: <span id="dataUsed"></span> / <span id="qrCapacity"></span> bytes</p>
+                <p>Used: <span id="dataUsed"></span> / <span id="qrCapacityCopy"></span> bytes</p>
             </div>
             <!-- Error message for data too big -->
             <div id="qrErrorMessage" style="display:none;">
@@ -255,7 +255,6 @@ if ($local_commit !== $remote_commit) {
             // Data is too big for QR code
             return null;
         }
-        const version = qr.version; // Get QR code version
 
         const scale = 4; // Adjust the scale (size of each module)
         const border = 4; // Adjust the border size
@@ -282,7 +281,7 @@ if ($local_commit !== $remote_commit) {
         // After drawing, hide the canvas and show the image
         convertCanvasToImage();
 
-        return version;
+        return qr.version; // Return QR code version
     }
 
     // Convert canvas to image and make the download link available
@@ -326,6 +325,7 @@ if ($local_commit !== $remote_commit) {
 
             document.getElementById('dataSize').textContent = '';
             document.getElementById('qrCapacity').textContent = '';
+            document.getElementById('qrCapacityCopy').textContent = '';
             document.getElementById('dataUsed').textContent = '';
             document.getElementById('qrErrorMessage').style.display = 'none';
 
@@ -386,11 +386,12 @@ if ($local_commit !== $remote_commit) {
             const dataSize = dataBytes.length;
 
             // QR Code capacity in bytes for version 40, error correction level M
-            const qrCapacity = 2331; // Maximum capacity in bytes
+            const qrCapacity = 2953; // Maximum capacity in bytes for alphanumeric mode
 
             // Update the data size and capacity display
             document.getElementById('dataSize').textContent = dataSize;
             document.getElementById('qrCapacity').textContent = qrCapacity;
+            document.getElementById('qrCapacityCopy').textContent = qrCapacity; // Update the copy
             document.getElementById('dataUsed').textContent = dataSize;
 
             if (dataSize > qrCapacity) {
