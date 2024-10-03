@@ -111,7 +111,6 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
 
         <!-- QR Code Display -->
         <h3>QR Code of Encrypted Output:</h3>
-        <canvas id="qrcodeCanvas"></canvas>
         <img id="qrcodeImage" style="display:none; margin: 20px auto; max-width: 100%; height: auto;" alt="QR Code Image"/>
         <button id="downloadQrBtn" class="button" style="display:none;">Download QR Code</button>
 
