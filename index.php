@@ -484,7 +484,7 @@ if ($local_commit !== $remote_commit) {
         }
     }
 
-    // Function to trim data to fit into QR code (optimized to get as close as possible to the limit)
+    // Function to trim data to fit into QR code (optimized for compression effects)
     async function trimDataToFit() {
         let originalText = document.getElementById('inputTextEncrypt').value;
         const key = document.getElementById('keyEncrypt').value;
@@ -503,18 +503,28 @@ if ($local_commit !== $remote_commit) {
         // Allow UI to update before starting the trimming loop
         await new Promise(resolve => setTimeout(resolve, 50));
 
-        let start = 0;
-        let end = originalText.length;
+        // Initialize variables
+        let maxLength = originalText.length;
+        let minLength = 0;
         let bestFitText = '';
         let bestDataSize = 0;
+        let bestLength = 0;
 
-        // Binary search to find the maximum length that fits
-        while (start <= end) {
-            let mid = Math.floor((start + end) / 2);
-            let trimmedText = originalText.substring(0, mid);
+        // Start with the full text
+        let currentLength = maxLength;
+
+        // Set a limit for the number of iterations to prevent infinite loops
+        const maxIterations = 50;
+        let iteration = 0;
+
+        while (iteration < maxIterations) {
+            iteration++;
+
+            // Get the current text to test
+            let testText = originalText.substring(0, currentLength);
 
             // Update the input field temporarily
-            document.getElementById('inputTextEncrypt').value = trimmedText;
+            document.getElementById('inputTextEncrypt').value = testText;
             autoResizeBox(document.getElementById('inputTextEncrypt'));
 
             // Recalculate encryption and check if data fits
@@ -524,16 +534,30 @@ if ($local_commit !== $remote_commit) {
             let dataSize = parseInt(document.getElementById('dataSize').textContent);
             document.getElementById('currentSize').textContent = dataSize;
 
-            if (dataSize > qrCapacity) {
-                // Need to trim more characters
-                end = mid - 1;
-            } else {
-                // Data fits, store it as the best fit so far
-                bestFitText = trimmedText;
-                bestDataSize = dataSize;
+            if (dataSize <= qrCapacity) {
+                // Data fits, check if it's the best fit
+                if (currentLength >= bestLength) {
+                    bestFitText = testText;
+                    bestDataSize = dataSize;
+                    bestLength = currentLength;
+                }
                 // Try to include more characters
-                start = mid + 1;
+                if (currentLength === maxLength) {
+                    // We've tried the full text and it fits
+                    break;
+                }
+                minLength = currentLength + 1;
+            } else {
+                // Data doesn't fit, need to trim more characters
+                maxLength = currentLength - 1;
             }
+
+            // Adjust current length
+            if (minLength > maxLength) {
+                // Can't find a better fit
+                break;
+            }
+            currentLength = Math.floor((minLength + maxLength) / 2);
 
             // Small delay to allow UI to update (optional)
             await new Promise(resolve => setTimeout(resolve, 10));
@@ -552,7 +576,6 @@ if ($local_commit !== $remote_commit) {
         // Hide the trimming overlay animation
         document.getElementById('trimmingOverlay').style.display = 'none';
     }
-
 
     // Apply auto-resize to all textareas and input fields
     const inputFields = [
