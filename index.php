@@ -149,13 +149,12 @@ if ($local_commit !== $remote_commit) {
             <textarea id="encryptedOutput" readonly onclick="this.select()"></textarea>
             <!-- New section for data size and QR code capacity -->
             <div id="dataInfo">
-                <p>Data Size: <span id="dataSize"></span> bytes</p>
                 <p>QR Code Capacity: <span id="qrCapacity"></span> bytes</p>
                 <p>Used: <span id="dataUsed"></span> / <span id="qrCapacityCopy"></span> bytes</p>
             </div>
             <!-- Error message for data too big -->
             <div id="qrErrorMessage" style="display:none;">
-                Data is too big to encode in a QR code.
+                Dataset is too large to display in a QR code.
             </div>
         </div>
 
