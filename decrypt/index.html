@@ -205,7 +205,7 @@
     }
 
     // Function to perform decryption and display output
-    async function performDecryption(base64EncryptedData, key) {
+    async function performDecryption(base64EncryptedData, keyInput) {
         try {
             // Decode Base64 to Uint8Array
             const combinedData = base64ToUint8Array(base64EncryptedData);
@@ -217,10 +217,10 @@
             const encryptedData = combinedData.slice(29);
 
             // Derive AES-256 Key from key
-            const key = await deriveKey(key, salt);
+            const derivedKey = await deriveKey(keyInput, salt);
 
             // Decrypt the encrypted data
-            const decryptedData = await decryptData(key, encryptedData, iv);
+            const decryptedData = await decryptData(derivedKey, encryptedData, iv);
 
             let originalText;
 
@@ -242,6 +242,7 @@
             alert('Wrong key. Check Formatting & Symbols, Etc.');
         }
     }
+
 
     // Apply auto-resize to all textareas and input fields
     const inputFields = [
