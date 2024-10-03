@@ -18,7 +18,8 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>LZ-String Compression and AES-256 Encryption</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Encryption</title>
     <!-- Include Google Fonts -->
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -38,33 +39,10 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
         h1 {
             margin-bottom: 40px;
         }
-        h2 {
-            margin-bottom: 20px;
-        }
         .container {
-            max-width: 1200px;
+            max-width: 800px;
             margin: 0 auto;
         }
-        /* Flex Layout */
-        .flex-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-        }
-        .section {
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            flex: 1 1 45%;
-            margin-bottom: 40px;
-        }
-        @media (max-width: 800px) {
-            .section {
-                flex: 1 1 100%;
-            }
-        }
-        /* Form Elements */
         textarea, input[type="text"] {
             width: 100%;
             padding: 12px;
@@ -80,7 +58,6 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
             border-color: #3498db;
             outline: none;
         }
-        /* Buttons */
         button {
             width: 100%;
             padding: 12px;
@@ -99,19 +76,16 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
         button:active {
             background-color: #1f6391;
         }
-        /* Headings */
         h3 {
             margin-top: 25px;
             margin-bottom: 10px;
             color: #2c3e50;
             font-weight: 500;
         }
-        /* QR Code Canvas */
         #qrcodeCanvas {
             display: block;
             margin: 20px auto;
         }
-        /* Footer */
         footer {
             text-align: center;
             padding: 20px;
@@ -123,42 +97,28 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
 <body>
 
 <div class="container">
-    <h1>LZ-String Compression and AES-256 Encryption</h1>
 
-    <div class="flex-container">
+    <div class="section">
+        <h1>Encryption</h1>
+        <textarea id="inputTextEncrypt" placeholder="Enter text to compress and encrypt" onclick="this.select()"></textarea>
+        <input type="text" id="passwordEncrypt" placeholder="Enter encryption password" onclick="this.select()"/>
+        <button id="compressEncryptBtn">Compress & Encrypt</button>
 
-        <!-- Encryption Section -->
-        <div class="section">
-            <h2>Encryption</h2>
-            <textarea id="inputTextEncrypt" placeholder="Enter text to compress and encrypt"></textarea>
-            <input type="text" id="passwordEncrypt" placeholder="Enter encryption password" />
-            <button id="compressEncryptBtn">Compress & Encrypt</button>
+        <h3>Base64 Encrypted Output:</h3>
+        <textarea id="encryptedOutput" readonly onclick="this.select()"></textarea>
 
-            <h3>Base64 Encrypted Output:</h3>
-            <textarea id="encryptedOutput" readonly></textarea>
+        <!-- QR Code Display -->
+        <h3>QR Code of Encrypted Output:</h3>
+        <canvas id="qrcodeCanvas"></canvas>
 
-            <!-- QR Code Display -->
-            <h3>QR Code of Encrypted Output:</h3>
-            <canvas id="qrcodeCanvas"></canvas>
-
-        </div>
-
-        <!-- Decryption Section -->
-        <div class="section">
-            <h2>Decryption</h2>
-            <textarea id="inputTextDecrypt" placeholder="Enter Base64 encrypted text to decrypt"></textarea>
-            <input type="text" id="passwordDecrypt" placeholder="Enter decryption password" />
-            <button id="decryptDecompressBtn">Decrypt & Decompress</button>
-
-            <h3>Decrypted and Decompressed Output:</h3>
-            <textarea id="decryptedOutput" readonly></textarea>
-        </div>
-
+        <!-- Link to Decryption Page -->
+        <h3>Decryption Link:</h3>
+        <input type="text" id="decryptionLink" readonly onclick="this.select()" />
     </div>
 </div>
 
 <footer>
-    &copy; 2023 Encryption App. All rights reserved.
+    &copy; 2024 Kyle B. All rights reserved.
 </footer>
 
 <!-- Include the lz-string.js library -->
@@ -167,17 +127,6 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
 <script src="qrcodegen.js"></script>
 
 <script>
-    // Utility function to convert Base64 string to Uint8Array
-    function base64ToUint8Array(base64) {
-        const binaryString = atob(base64);
-        const len = binaryString.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-        }
-        return bytes;
-    }
-
     // Utility function to convert Uint8Array to Base64 string
     function uint8ArrayToBase64(bytes) {
         let binary = '';
@@ -224,7 +173,7 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
             keyMaterial,
             { name: 'AES-GCM', length: 256 },
             false,
-            ['encrypt', 'decrypt']
+            ['encrypt']
         );
     }
 
@@ -237,16 +186,6 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
             data
         );
         return { encryptedData: new Uint8Array(encryptedData), iv };
-    }
-
-    // Decrypt AES-256 encrypted data
-    async function decryptData(key, encryptedData, iv) {
-        const decryptedData = await crypto.subtle.decrypt(
-            { name: 'AES-GCM', iv: iv },
-            key,
-            encryptedData
-        );
-        return new Uint8Array(decryptedData);
     }
 
     // Generate QR Code from data
@@ -324,8 +263,14 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
             // Auto-resize the output textarea
             autoResizeBox(document.getElementById('encryptedOutput'));
 
-            // Generate and display the QR code
-            generateQRCode(base64EncryptedData);
+            // Generate Decryption Link
+            const urlEncodedData = encodeURIComponent(base64EncryptedData);
+            const decryptionLink = `${window.location.origin}/decrypt.html?data=${urlEncodedData}`;
+            document.getElementById('decryptionLink').value = decryptionLink;
+            autoResizeBox(document.getElementById('decryptionLink'));
+
+            // Generate and display the QR code with the decryption link
+            generateQRCode(decryptionLink);  // Now the QR code will embed the decryption link
 
         } catch (error) {
             console.error('Encryption Error:', error);
@@ -333,62 +278,12 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
         }
     });
 
-    // Decryption Section
-    document.getElementById('decryptDecompressBtn').addEventListener('click', async () => {
-        try {
-            const password = document.getElementById('passwordDecrypt').value;
-            const base64EncryptedData = document.getElementById('inputTextDecrypt').value;
-
-            if (!base64EncryptedData || !password) {
-                alert('Please enter both the encrypted data and password.');
-                return;
-            }
-
-            // Decode Base64 to Uint8Array
-            const combinedData = base64ToUint8Array(base64EncryptedData);
-
-            // Extract the compression flag, salt, iv, and encrypted data
-            const compressionFlag = combinedData[0];
-            const salt = combinedData.slice(1, 17); // 16 bytes for salt
-            const iv = combinedData.slice(17, 29); // 12 bytes for AES-GCM IV
-            const encryptedData = combinedData.slice(29);
-
-            // Derive AES-256 Key from password
-            const key = await deriveKey(password, salt);
-
-            // Decrypt the encrypted data
-            const decryptedData = await decryptData(key, encryptedData, iv);
-
-            let originalText;
-
-            // Decompress if compression was applied
-            if (compressionFlag === 1) {
-                originalText = LZString.decompressFromUint8Array(decryptedData);
-            } else {
-                const decoder = new TextDecoder();
-                originalText = decoder.decode(decryptedData);
-            }
-
-            // Display decrypted and decompressed text
-            document.getElementById('decryptedOutput').value = originalText;
-
-            // Auto-resize the output textarea
-            autoResizeBox(document.getElementById('decryptedOutput'));
-
-        } catch (error) {
-            console.error('Decryption Error:', error);
-            alert('An error occurred during decryption. Please check the password and the encrypted data.');
-        }
-    });
-
     // Apply auto-resize to all textareas and input fields
     const inputFields = [
         document.getElementById('inputTextEncrypt'),
         document.getElementById('passwordEncrypt'),
-        document.getElementById('inputTextDecrypt'),
-        document.getElementById('passwordDecrypt'),
         document.getElementById('encryptedOutput'),
-        document.getElementById('decryptedOutput')
+        document.getElementById('decryptionLink')
     ];
 
     inputFields.forEach(applyAutoResize);

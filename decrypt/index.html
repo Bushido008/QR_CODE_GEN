@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>QR Decryption</title>
+    <!-- Include Google Fonts -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f7f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 40px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        /* Form Elements */
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ccd0d5;
+            border-radius: 4px;
+            font-size: 16px;
+            resize: none; /* Disable manual resizing */
+            overflow: hidden; /* Disable scroll bars */
+            box-sizing: border-box;
+        }
+        textarea:focus, input[type="text"]:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        /* Buttons */
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #3498db;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:active {
+            background-color: #1f6391;
+        }
+        /* Headings */
+        h3 {
+            margin-top: 25px;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Decryption</h1>
+
+    <div class="section">
+        <textarea id="inputTextDecrypt" placeholder="Enter Base64 encrypted text to decrypt" onclick="this.select()"></textarea>
+        <input type="text" id="passwordDecrypt" placeholder="Enter decryption password" onclick="this.select()"/>
+        <button id="decryptDecompressBtn">Decrypt & Decompress</button>
+
+        <h3>Decrypted and Decompressed Output:</h3>
+        <textarea id="decryptedOutput" readonly onclick="this.select()"></textarea>
+    </div>
+</div>
+
+<footer>
+    &copy; 2024 Kyle B. All rights reserved.
+</footer>
+
+<!-- Include the lz-string.js library -->
+<script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
+
+<script>
+    // Utility function to get query parameters
+    function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+    }
+
+    // Utility function to convert Base64 string to Uint8Array
+    function base64ToUint8Array(base64) {
+        const binaryString = atob(base64);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        return bytes;
+    }
+
+    // Function to auto-resize textarea and input boxes based on content
+    function autoResizeBox(box) {
+        box.style.height = 'auto';
+        box.style.height = box.scrollHeight + 'px';
+    }
+
+    // Apply auto-resize to relevant textareas and inputs on content change
+    function applyAutoResize(box) {
+        box.addEventListener('input', () => autoResizeBox(box));
+        // Initial resize to fit any pre-filled content
+        autoResizeBox(box);
+    }
+
+    // Derive AES-256 key from password using PBKDF2
+    async function deriveKey(password, salt) {
+        const encoder = new TextEncoder();
+        const passwordData = encoder.encode(password);
+
+        const keyMaterial = await crypto.subtle.importKey(
+            'raw',
+            passwordData,
+            { name: 'PBKDF2' },
+            false,
+            ['deriveKey']
+        );
+
+        return crypto.subtle.deriveKey(
+            {
+                name: 'PBKDF2',
+                salt: salt,
+                iterations: 100000,
+                hash: 'SHA-256'
+            },
+            keyMaterial,
+            { name: 'AES-GCM', length: 256 },
+            false,
+            ['encrypt', 'decrypt']
+        );
+    }
+
+    // Decrypt AES-256 encrypted data
+    async function decryptData(key, encryptedData, iv) {
+        const decryptedData = await crypto.subtle.decrypt(
+            { name: 'AES-GCM', iv: iv },
+            key,
+            encryptedData
+        );
+        return new Uint8Array(decryptedData);
+    }
+
+    // Function to perform decryption and display output
+    async function performDecryption(base64EncryptedData, password) {
+        try {
+            // Decode Base64 to Uint8Array
+            const combinedData = base64ToUint8Array(base64EncryptedData);
+
+            // Extract the compression flag, salt, iv, and encrypted data
+            const compressionFlag = combinedData[0];
+            const salt = combinedData.slice(1, 17); // 16 bytes for salt
+            const iv = combinedData.slice(17, 29); // 12 bytes for AES-GCM IV
+            const encryptedData = combinedData.slice(29);
+
+            // Derive AES-256 Key from password
+            const key = await deriveKey(password, salt);
+
+            // Decrypt the encrypted data
+            const decryptedData = await decryptData(key, encryptedData, iv);
+
+            let originalText;
+
+            // Decompress if compression was applied
+            if (compressionFlag === 1) {
+                originalText = LZString.decompressFromUint8Array(decryptedData);
+            } else {
+                const decoder = new TextDecoder();
+                originalText = decoder.decode(decryptedData);
+            }
+
+            // Display decrypted and decompressed text
+            document.getElementById('decryptedOutput').value = originalText;
+
+            // Auto-resize the output textarea
+            autoResizeBox(document.getElementById('decryptedOutput'));
+        } catch (error) {
+            console.error('Decryption Error:', error);
+            alert('Wrong Password. Check Formatting & Symbols, Etc.');
+        }
+    }
+
+    // Apply auto-resize to all textareas and input fields
+    const inputFields = [
+        document.getElementById('inputTextDecrypt'),
+        document.getElementById('passwordDecrypt'),
+        document.getElementById('decryptedOutput')
+    ];
+
+    inputFields.forEach(applyAutoResize);
+
+    // Check if 'data' parameter is present in the URL
+    window.addEventListener('DOMContentLoaded', async () => {
+        const base64EncryptedData = getQueryParam('data');
+        if (base64EncryptedData) {
+            document.getElementById('inputTextDecrypt').value = base64EncryptedData;
+            autoResizeBox(document.getElementById('inputTextDecrypt'));
+        }
+    });
+
+    // Decryption Button Event Listener
+    document.getElementById('decryptDecompressBtn').addEventListener('click', async () => {
+        const password = document.getElementById('passwordDecrypt').value;
+        const base64EncryptedData = document.getElementById('inputTextDecrypt').value;
+
+        if (!base64EncryptedData || !password) {
+            alert('Please enter both the encrypted data and password.');
+            return;
+        }
+
+        await performDecryption(base64EncryptedData, password);
+    });
+</script>
+
+</body>
+</html>
