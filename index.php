@@ -242,7 +242,7 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
             // Create a temporary download link
             const link = document.createElement('a');
             link.href = dataUrl;
-            link.download = 'qr_code.png'; // Set the default filename
+            link.download = 'qr_matrix.png'; // Set the default filename
             link.click(); // Simulate a click to trigger download
         });
     }
