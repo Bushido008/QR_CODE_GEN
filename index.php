@@ -92,9 +92,23 @@ if ($local_commit !== $remote_commit) {
             text-decoration: underline; /* Optional: Add underline on hover */
             color: #2980b9; /* Change the color on hover */
         }
-        button {
-            display: block;  /* Center the button */
-            margin: 0 auto;  /* Center the button horizontally */
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            color: #95a5a6;
+        }
+        /* Added styles for data info */
+        #dataInfo {
+            margin-top: 10px;
+            font-size: 1em;
+            color: #2c3e50;
+        }
+        /* Center the Download QR Code button */
+        #downloadQrBtn {
+            display: block;
+            margin: 0 auto;
+            width: auto;
             padding: 12px;
             background-color: #3498db;
             color: #ffffff;
@@ -104,21 +118,12 @@ if ($local_commit !== $remote_commit) {
             font-weight: 500;
             cursor: pointer;
             transition: background-color 0.3s ease;
-            width: auto; /* Adjust the width as needed */
         }
-
-        button:hover {
+        #downloadQrBtn:hover {
             background-color: #2980b9;
         }
-
-        button:active {
+        #downloadQrBtn:active {
             background-color: #1f6391;
-        }
-        footer {
-            text-align: center;
-            padding: 20px;
-            margin-top: 40px;
-            color: #95a5a6;
         }
     </style>
 </head>
@@ -135,6 +140,11 @@ if ($local_commit !== $remote_commit) {
         <div id="encryptedOutputSection" style="display:none;">
             <h3>Base64 (Raw Data):</h3>
             <textarea id="encryptedOutput" readonly onclick="this.select()"></textarea>
+            <!-- New section for data size and QR code version -->
+            <div id="dataInfo">
+                <p>Data Size: <span id="dataSize"></span> bytes</p>
+                <p>QR Code Version: <span id="qrVersion"></span></p>
+            </div>
         </div>
 
         <!-- QR Code Display Section -->
@@ -142,7 +152,7 @@ if ($local_commit !== $remote_commit) {
             <h3>QR Code of Data:</h3>
             <canvas id="qrcodeCanvas"></canvas>
             <img id="qrcodeImage" style="display:none; margin: 20px auto; max-width: 100%; height: auto;" alt="QR Code Image"/>
-            <button id="downloadQrBtn" class="button" style="display:none;">Download QR Code</button>
+            <button id="downloadQrBtn" style="display:none;">Download QR Code</button>
         </div>
 
         <!-- Decryption Link Section -->
@@ -227,6 +237,11 @@ if ($local_commit !== $remote_commit) {
     function generateQRCode(data) {
         const canvas = document.getElementById('qrcodeCanvas');
         const qr = qrcodegen.QrCode.encodeText(data, qrcodegen.QrCode.Ecc.MEDIUM);
+        const version = qr.version; // Get QR code version
+
+        // Update the QR code version display
+        document.getElementById('qrVersion').textContent = version;
+
         const scale = 4; // Adjust the scale (size of each module)
         const border = 4; // Adjust the border size
 
@@ -295,6 +310,9 @@ if ($local_commit !== $remote_commit) {
             document.getElementById('decryptionLink').textContent = '';
             document.getElementById('decryptionLinkSection').style.display = 'none';
 
+            document.getElementById('dataSize').textContent = '';
+            document.getElementById('qrVersion').textContent = '';
+
             document.getElementById('qrcodeImage').src = '';
             document.getElementById('qrCodeSection').style.display = 'none';
 
@@ -348,6 +366,14 @@ if ($local_commit !== $remote_commit) {
             document.getElementById('decryptionLink').href = decryptionLink;
             document.getElementById('decryptionLink').textContent = 'Decryption Link';
             document.getElementById('decryptionLinkSection').style.display = 'block';
+
+            // Compute data size in bytes for the decryption link
+            const encoder = new TextEncoder();
+            const dataBytes = encoder.encode(decryptionLink);
+            const dataSize = dataBytes.length;
+
+            // Update the data size display
+            document.getElementById('dataSize').textContent = dataSize;
 
             // Generate and display the QR code with the decryption link
             generateQRCode(decryptionLink);
