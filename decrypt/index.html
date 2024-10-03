@@ -113,7 +113,7 @@
 
     <div class="section">
         <textarea id="inputTextDecrypt" placeholder="Enter Base64 encrypted text to decrypt" onclick="this.select()"></textarea>
-        <input type="text" id="passwordDecrypt" placeholder="Enter decryption password" onclick="this.select()"/>
+        <input type="text" id="keyDecrypt" placeholder="Enter decryption key" onclick="this.select()"/>
         <button id="decryptDecompressBtn">Decrypt & Decompress</button>
 
         <h3>Decrypted and Decompressed Output:</h3>
@@ -167,14 +167,14 @@
         autoResizeBox(box);
     }
 
-    // Derive AES-256 key from password using PBKDF2
-    async function deriveKey(password, salt) {
+    // Derive AES-256 key from key using PBKDF2
+    async function deriveKey(key, salt) {
         const encoder = new TextEncoder();
-        const passwordData = encoder.encode(password);
+        const keyData = encoder.encode(key);
 
         const keyMaterial = await crypto.subtle.importKey(
             'raw',
-            passwordData,
+            keyData,
             { name: 'PBKDF2' },
             false,
             ['deriveKey']
@@ -205,7 +205,7 @@
     }
 
     // Function to perform decryption and display output
-    async function performDecryption(base64EncryptedData, password) {
+    async function performDecryption(base64EncryptedData, key) {
         try {
             // Decode Base64 to Uint8Array
             const combinedData = base64ToUint8Array(base64EncryptedData);
@@ -216,8 +216,8 @@
             const iv = combinedData.slice(17, 29); // 12 bytes for AES-GCM IV
             const encryptedData = combinedData.slice(29);
 
-            // Derive AES-256 Key from password
-            const key = await deriveKey(password, salt);
+            // Derive AES-256 Key from key
+            const key = await deriveKey(key, salt);
 
             // Decrypt the encrypted data
             const decryptedData = await decryptData(key, encryptedData, iv);
@@ -239,14 +239,14 @@
             autoResizeBox(document.getElementById('decryptedOutput'));
         } catch (error) {
             console.error('Decryption Error:', error);
-            alert('Wrong Password. Check Formatting & Symbols, Etc.');
+            alert('Wrong key. Check Formatting & Symbols, Etc.');
         }
     }
 
     // Apply auto-resize to all textareas and input fields
     const inputFields = [
         document.getElementById('inputTextDecrypt'),
-        document.getElementById('passwordDecrypt'),
+        document.getElementById('keyDecrypt'),
         document.getElementById('decryptedOutput')
     ];
 
@@ -263,15 +263,15 @@
 
     // Decryption Button Event Listener
     document.getElementById('decryptDecompressBtn').addEventListener('click', async () => {
-        const password = document.getElementById('passwordDecrypt').value;
+        const key = document.getElementById('keyDecrypt').value;
         const base64EncryptedData = document.getElementById('inputTextDecrypt').value;
 
-        if (!base64EncryptedData || !password) {
-            alert('Please enter both the encrypted data and password.');
+        if (!base64EncryptedData || !key) {
+            alert('Please enter both the encrypted data and key.');
             return;
         }
 
-        await performDecryption(base64EncryptedData, password);
+        await performDecryption(base64EncryptedData, key);
     });
 </script>
 

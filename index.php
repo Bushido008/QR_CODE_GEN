@@ -103,7 +103,7 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
     <div class="section">
         <h1>Encryption</h1>
         <textarea id="inputTextEncrypt" placeholder="Enter text to compress and encrypt" onclick="this.select()"></textarea>
-        <input type="text" id="passwordEncrypt" placeholder="Enter encryption password" onclick="this.select()"/>
+        <input type="text" id="keyEncrypt" placeholder="Enter encryption key" onclick="this.select()"/>
         <button id="compressEncryptBtn">Compress & Encrypt</button>
 
         <h3>Base64 Encrypted Output:</h3>
@@ -154,14 +154,14 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
         autoResizeBox(box);
     }
 
-    // Derive AES-256 key from password using PBKDF2
-    async function deriveKey(password, salt) {
+    // Derive AES-256 key from key using PBKDF2
+    async function deriveKey(key, salt) {
         const encoder = new TextEncoder();
-        const passwordData = encoder.encode(password);
+        const keyData = encoder.encode(key);
 
         const keyMaterial = await crypto.subtle.importKey(
             'raw',
-            passwordData,
+            keyData,
             { name: 'PBKDF2' },
             false,
             ['deriveKey']
@@ -252,10 +252,10 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
     document.getElementById('compressEncryptBtn').addEventListener('click', async () => {
         try {
             const textToEncrypt = document.getElementById('inputTextEncrypt').value;
-            const password = document.getElementById('passwordEncrypt').value;
+            const key = document.getElementById('keyEncrypt').value;
 
-            if (!textToEncrypt || !password) {
-                alert('Please enter both text and password.');
+            if (!textToEncrypt || !key) {
+                alert('Please enter both text and key.');
                 return;
             }
 
@@ -274,8 +274,8 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
             // Generate a random salt
             const salt = crypto.getRandomValues(new Uint8Array(16));
 
-            // Derive AES-256 Key from password
-            const key = await deriveKey(password, salt);
+            // Derive AES-256 Key from key
+            const key = await deriveKey(key, salt);
 
             // Encrypt the data
             const { encryptedData, iv } = await encryptData(key, dataToEncrypt);
@@ -314,7 +314,7 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
     // Apply auto-resize to all textareas and input fields
     const inputFields = [
         document.getElementById('inputTextEncrypt'),
-        document.getElementById('passwordEncrypt'),
+        document.getElementById('keyEncrypt'),
         document.getElementById('encryptedOutput'),
         document.getElementById('decryptionLink')
     ];
