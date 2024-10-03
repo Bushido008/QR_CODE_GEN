@@ -19,9 +19,6 @@ if ($local_commit !== $remote_commit) {
 	// If the commits don't match, pull the latest changes
 	$update_output = shell_exec('git pull origin main 2>&1');
 	echo "<pre>Repository updated:\n$update_output</pre>";
-} else {
-	// If the repository is up-to-date
-	echo "<pre>The repository is already up-to-date.</pre>";
 }
 
 ?>
