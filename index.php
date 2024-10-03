@@ -104,10 +104,10 @@ if ($local_commit !== $remote_commit) {
             font-size: 1em;
             color: #2c3e50;
         }
-        /* Center the Download QR Code button */
-        #downloadQrBtn {
+        /* Center the buttons */
+        .center-button {
             display: block;
-            margin: 0 auto;
+            margin: 10px auto;
             width: auto;
             padding: 12px;
             background-color: #3498db;
@@ -119,10 +119,10 @@ if ($local_commit !== $remote_commit) {
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
-        #downloadQrBtn:hover {
+        .center-button:hover {
             background-color: #2980b9;
         }
-        #downloadQrBtn:active {
+        .center-button:active {
             background-color: #1f6391;
         }
         /* Error message styling */
@@ -149,14 +149,16 @@ if ($local_commit !== $remote_commit) {
             <textarea id="encryptedOutput" readonly onclick="this.select()"></textarea>
             <!-- New section for data size and QR code capacity -->
             <div id="dataInfo">
-                <p style="display:none;">Data Size: <span id="dataSize" ></span> bytes</p>
+                <p>Data Size: <span id="dataSize"></span> bytes</p>
                 <p>QR Code Capacity: <span id="qrCapacity"></span> bytes</p>
                 <p>Used: <span id="dataUsed"></span> / <span id="qrCapacityCopy"></span> bytes</p>
             </div>
             <!-- Error message for data too big -->
             <div id="qrErrorMessage" style="display:none;">
-                Dataset is too large to display in a QR code.
+                Data is too big to encode in a QR code.
             </div>
+            <!-- Trim Button -->
+            <button id="trimButton" class="center-button" style="display:none;">Trim Data to Fit</button>
         </div>
 
         <!-- QR Code Display Section -->
@@ -164,7 +166,7 @@ if ($local_commit !== $remote_commit) {
             <h3>QR Code of Data:</h3>
             <canvas id="qrcodeCanvas"></canvas>
             <img id="qrcodeImage" style="display:none; margin: 20px auto; max-width: 100%; height: auto;" alt="QR Code Image"/>
-            <button id="downloadQrBtn" style="display:none;">Download QR Code</button>
+            <button id="downloadQrBtn" class="center-button" style="display:none;">Download QR Code</button>
         </div>
 
         <!-- Decryption Link Section -->
@@ -328,6 +330,7 @@ if ($local_commit !== $remote_commit) {
             document.getElementById('qrCapacityCopy').textContent = '';
             document.getElementById('dataUsed').textContent = '';
             document.getElementById('qrErrorMessage').style.display = 'none';
+            document.getElementById('trimButton').style.display = 'none';
 
             document.getElementById('qrcodeImage').src = '';
             document.getElementById('qrCodeSection').style.display = 'none';
@@ -386,7 +389,7 @@ if ($local_commit !== $remote_commit) {
             const dataSize = dataBytes.length;
 
             // QR Code capacity in bytes for version 40, error correction level M
-            const qrCapacity = 2331; // Maximum capacity in bytes for alphanumeric mode
+            const qrCapacity = 2953; // Maximum capacity in bytes for byte mode
 
             // Update the data size and capacity display
             document.getElementById('dataSize').textContent = dataSize;
@@ -400,9 +403,11 @@ if ($local_commit !== $remote_commit) {
                 document.getElementById('decryptionLinkSection').style.display = 'none';
                 document.getElementById('qrCodeSection').style.display = 'none';
                 document.getElementById('downloadQrBtn').style.display = 'none';
+                document.getElementById('trimButton').style.display = 'block'; // Show Trim button
                 return;
             } else {
                 document.getElementById('qrErrorMessage').style.display = 'none';
+                document.getElementById('trimButton').style.display = 'none'; // Hide Trim button if data fits
             }
 
             // Update decryption link
@@ -418,14 +423,48 @@ if ($local_commit !== $remote_commit) {
                 document.getElementById('qrErrorMessage').style.display = 'block';
                 document.getElementById('qrCodeSection').style.display = 'none';
                 document.getElementById('downloadQrBtn').style.display = 'none';
+                document.getElementById('trimButton').style.display = 'block'; // Show Trim button
             } else {
                 document.getElementById('qrCodeSection').style.display = 'block';
                 document.getElementById('qrErrorMessage').style.display = 'none';
+                document.getElementById('trimButton').style.display = 'none'; // Hide Trim button if data fits
             }
 
         } catch (error) {
             console.error('Encryption Error:', error);
             alert('An error occurred during encryption.');
+        }
+    }
+
+    // Function to trim data to fit into QR code
+    async function trimDataToFit() {
+        let textToEncrypt = document.getElementById('inputTextEncrypt').value;
+        const key = document.getElementById('keyEncrypt').value;
+
+        if (!textToEncrypt || !key) {
+            return;
+        }
+
+        // Keep trimming one character at a time from the end
+        while (textToEncrypt.length > 0) {
+            // Remove last character
+            textToEncrypt = textToEncrypt.slice(0, -1);
+
+            // Update the input field
+            document.getElementById('inputTextEncrypt').value = textToEncrypt;
+            autoResizeBox(document.getElementById('inputTextEncrypt'));
+
+            // Recalculate encryption and check if data fits
+            await updateEncryption();
+
+            // Check if data now fits into QR code
+            const dataSize = parseInt(document.getElementById('dataSize').textContent);
+            const qrCapacity = parseInt(document.getElementById('qrCapacity').textContent);
+
+            if (dataSize <= qrCapacity) {
+                // Data now fits
+                break;
+            }
         }
     }
 
@@ -441,6 +480,10 @@ if ($local_commit !== $remote_commit) {
     // Add input event listeners to update encryption live
     document.getElementById('inputTextEncrypt').addEventListener('input', updateEncryption);
     document.getElementById('keyEncrypt').addEventListener('input', updateEncryption);
+
+    // Add click event listener to the Trim button
+    document.getElementById('trimButton').addEventListener('click', trimDataToFit);
+
 </script>
 
 </body>
