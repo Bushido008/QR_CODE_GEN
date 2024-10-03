@@ -484,7 +484,7 @@ if ($local_commit !== $remote_commit) {
         }
     }
 
-    // Function to trim data to fit into QR code (with exponential character removal)
+    // Function to trim data to fit into QR code (with controlled timing)
     async function trimDataToFit() {
         let textToEncrypt = document.getElementById('inputTextEncrypt').value;
         const key = document.getElementById('keyEncrypt').value;
@@ -506,27 +506,36 @@ if ($local_commit !== $remote_commit) {
         let dataSize = parseInt(document.getElementById('dataSize').textContent);
         document.getElementById('currentSize').textContent = dataSize;
 
-        // Keep trimming characters from the end
+        // Calculate total amount of data to trim (in bytes)
+        let totalExcessSize = dataSize - qrCapacity;
+
+        // Calculate total trimming time based on excess size
+        // Map totalExcessSize from 0 to maxExcessSize to 1 to 5 seconds
+        const maxExcessSize = 5000; // Maximum expected excess size in bytes
+        const minTrimTime = 1000;   // Minimum total trimming time in milliseconds (1 second)
+        const maxTrimTime = 5000;   // Maximum total trimming time in milliseconds (5 seconds)
+
+        // Ensure totalExcessSize is not negative
+        totalExcessSize = Math.max(totalExcessSize, 0);
+
+        // Calculate desired total trimming time
+        let totalTrimTime = minTrimTime + ((maxTrimTime - minTrimTime) * Math.min(totalExcessSize, maxExcessSize) / maxExcessSize);
+
+        // Calculate number of iterations based on desired total trimming time and a base delay
+        const baseDelay = 100; // Base delay between iterations in milliseconds
+        let iterations = Math.ceil(totalTrimTime / baseDelay);
+
+        // Calculate characters to remove per iteration
+        let totalCharsToRemove = textToEncrypt.length;
+        let charsPerIteration = Math.ceil(totalCharsToRemove / iterations);
+
+        // Ensure at least one character is removed per iteration
+        charsPerIteration = Math.max(charsPerIteration, 1);
+
+        // Trimming loop
         while (textToEncrypt.length > 0) {
-            // Calculate how much we need to remove
-            let excessSize = dataSize - qrCapacity;
-
-            if (excessSize <= 0) {
-                // Data now fits
-                break;
-            }
-
-            // Estimate number of characters to remove
-            // Remove a fraction of the remaining text based on how far we are from the target
-            let totalChars = textToEncrypt.length;
-            let fractionToRemove = Math.min(0.5, excessSize / dataSize); // Limit fraction to at most 0.5
-            let charsToRemove = Math.ceil(totalChars * fractionToRemove);
-
-            // Ensure at least one character is removed
-            charsToRemove = Math.max(charsToRemove, 1);
-
-            // Remove charsToRemove characters from the end
-            textToEncrypt = textToEncrypt.slice(0, -charsToRemove);
+            // Remove charsPerIteration characters from the end
+            textToEncrypt = textToEncrypt.slice(0, -charsPerIteration);
 
             // Update the input field
             document.getElementById('inputTextEncrypt').value = textToEncrypt;
@@ -539,13 +548,20 @@ if ($local_commit !== $remote_commit) {
             dataSize = parseInt(document.getElementById('dataSize').textContent);
             document.getElementById('currentSize').textContent = dataSize;
 
-            // Small delay to allow UI to update (optional)
-            await new Promise(resolve => setTimeout(resolve, 10));
+            // Check if data now fits into QR code
+            if (dataSize <= qrCapacity) {
+                // Data now fits
+                break;
+            }
+
+            // Delay between iterations to control total trimming time
+            await new Promise(resolve => setTimeout(resolve, baseDelay));
         }
 
         // Hide the trimming overlay animation
         document.getElementById('trimmingOverlay').style.display = 'none';
     }
+
     // Apply auto-resize to all textareas and input fields
     const inputFields = [
         document.getElementById('inputTextEncrypt'),
