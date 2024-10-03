@@ -99,11 +99,13 @@ if ($local_commit !== $remote_commit) {
         }
         .link {
             margin-top: 10px;
-            font-size: 1em; /* Same as the default h2 font size */
-            font-weight: 500; /* You can adjust this to match your h2 font weight */
-            color: #3498db; /* Optional: Change the color of the link */
-            text-decoration: none; /* Remove underline from the link */
+            font-size: 1em;
+            font-weight: 500;
+            color: #3498db;
+            text-decoration: none;
+            display: inline-block; /* or block */
             text-align: center;
+            width: 100%; /* Ensure the link takes the full width */
         }
         .link:hover {
             text-decoration: underline; /* Optional: Add underline on hover */
