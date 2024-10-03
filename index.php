@@ -1,18 +1,29 @@
 <?php
-// Check if the 'update' query parameter is set and matches a specific key for security
-if (isset($_GET['update']) && $_GET['update'] === '3403') {
-	// Change to the directory where the git repo is located
-	$repo_dir = '/var/www/poeticoasis.com';  // Change this to the directory of your repository
+// Change to the directory where the git repo is located
+$repo_dir = '/var/www/poeticoasis.com';  // Change this to the directory of your repository
 
-	// Execute git pull as www-data
-	chdir($repo_dir);
-	$output = shell_exec('git pull origin main 2>&1');
+// Execute git commands as www-data
+chdir($repo_dir);
 
-	// Display the output
-	echo "<pre>$output</pre>";
+// Fetch latest changes from the remote repository
+shell_exec('git fetch origin 2>&1');
 
-	exit();
+// Get the local HEAD commit hash
+$local_commit = trim(shell_exec('git rev-parse HEAD'));
+
+// Get the remote HEAD commit hash
+$remote_commit = trim(shell_exec('git rev-parse origin/main'));
+
+// Compare local and remote commits
+if ($local_commit !== $remote_commit) {
+	// If the commits don't match, pull the latest changes
+	$update_output = shell_exec('git pull origin main 2>&1');
+	echo "<pre>Repository updated:\n$update_output</pre>";
+} else {
+	// If the repository is up-to-date
+	echo "<pre>The repository is already up-to-date.</pre>";
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -102,8 +113,8 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
 
     <div class="section">
         <h1>Encryption</h1>
-        <textarea id="inputTextEncrypt" placeholder="Enter text to compress and encrypt" onclick="this.select()"></textarea>
-        <input type="text" id="keyEncrypt" placeholder="Enter encryption key" onclick="this.select()"/>
+        <textarea id="inputTextEncrypt" placeholder="Enter text to compress and encrypt"></textarea>
+        <input type="text" id="keyEncrypt" placeholder="Enter encryption key"/>
         <button id="compressEncryptBtn">Compress & Encrypt</button>
 
         <h3>Base64 Encrypted Output:</h3>
