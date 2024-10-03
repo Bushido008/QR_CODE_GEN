@@ -386,7 +386,7 @@ if ($local_commit !== $remote_commit) {
             const dataSize = dataBytes.length;
 
             // QR Code capacity in bytes for version 40, error correction level M
-            const qrCapacity = 2953; // Maximum capacity in bytes for alphanumeric mode
+            const qrCapacity = 2331; // Maximum capacity in bytes for alphanumeric mode
 
             // Update the data size and capacity display
             document.getElementById('dataSize').textContent = dataSize;
