@@ -97,6 +97,16 @@ if ($local_commit !== $remote_commit) {
             max-width: 100%; /* Ensure it doesn't exceed the screen width */
             height: auto;   /* Maintain aspect ratio */
         }
+        .link {
+            font-size: 2em; /* Same as the default h2 font size */
+            font-weight: 500; /* You can adjust this to match your h2 font weight */
+            color: #3498db; /* Optional: Change the color of the link */
+            text-decoration: none; /* Remove underline from the link */
+        }
+        .link:hover {
+            text-decoration: underline; /* Optional: Add underline on hover */
+            color: #2980b9; /* Change the color on hover */
+        }
         footer {
             text-align: center;
             padding: 20px;
@@ -131,8 +141,7 @@ if ($local_commit !== $remote_commit) {
 
         <!-- Decryption Link Section -->
         <div id="decryptionLinkSection" style="display:none;">
-            <h3>Decryption Link:</h3>
-            <a id="decryptionLink" href="#" target="_blank">Decryption Link</a>
+            <a id="decryptionLink" class="link" href="#" target="_blank">Decryption Link</a>
         </div>
     </div>
 </div>
