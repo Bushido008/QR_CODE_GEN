@@ -484,7 +484,7 @@ if ($local_commit !== $remote_commit) {
         }
     }
 
-    // Function to trim data to fit into QR code (optimized for compression effects)
+    // Function to trim data to fit into QR code (ensuring final data fits under QR code limit)
     async function trimDataToFit() {
         let originalText = document.getElementById('inputTextEncrypt').value;
         const key = document.getElementById('keyEncrypt').value;
@@ -507,15 +507,17 @@ if ($local_commit !== $remote_commit) {
         let maxLength = originalText.length;
         let minLength = 0;
         let bestFitText = '';
-        let bestDataSize = 0;
+        let bestDataSize = Number.MAX_SAFE_INTEGER;
         let bestLength = 0;
 
         // Start with the full text
         let currentLength = maxLength;
 
         // Set a limit for the number of iterations to prevent infinite loops
-        const maxIterations = 50;
+        const maxIterations = 100; // Increased to allow more iterations
         let iteration = 0;
+
+        let dataFits = false; // Flag to check if any data fits
 
         while (iteration < maxIterations) {
             iteration++;
@@ -536,16 +538,13 @@ if ($local_commit !== $remote_commit) {
 
             if (dataSize <= qrCapacity) {
                 // Data fits, check if it's the best fit
+                dataFits = true;
                 if (currentLength >= bestLength) {
                     bestFitText = testText;
                     bestDataSize = dataSize;
                     bestLength = currentLength;
                 }
                 // Try to include more characters
-                if (currentLength === maxLength) {
-                    // We've tried the full text and it fits
-                    break;
-                }
                 minLength = currentLength + 1;
             } else {
                 // Data doesn't fit, need to trim more characters
@@ -563,15 +562,27 @@ if ($local_commit !== $remote_commit) {
             await new Promise(resolve => setTimeout(resolve, 10));
         }
 
-        // Update the input field with the best fit text
-        document.getElementById('inputTextEncrypt').value = bestFitText;
-        autoResizeBox(document.getElementById('inputTextEncrypt'));
+        if (dataFits) {
+            // Update the input field with the best fit text
+            document.getElementById('inputTextEncrypt').value = bestFitText;
+            autoResizeBox(document.getElementById('inputTextEncrypt'));
 
-        // Recalculate encryption to reflect the final trimmed text
-        await updateEncryption();
+            // Recalculate encryption to reflect the final trimmed text
+            await updateEncryption();
 
-        // Update current size in overlay
-        document.getElementById('currentSize').textContent = bestDataSize;
+            // Update current size in overlay
+            document.getElementById('currentSize').textContent = bestDataSize;
+        } else {
+            // No data fits, set input to empty string
+            document.getElementById('inputTextEncrypt').value = '';
+            autoResizeBox(document.getElementById('inputTextEncrypt'));
+
+            // Recalculate encryption with empty input
+            await updateEncryption();
+
+            // Update current size in overlay
+            document.getElementById('currentSize').textContent = '0';
+        }
 
         // Hide the trimming overlay animation
         document.getElementById('trimmingOverlay').style.display = 'none';
