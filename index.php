@@ -265,7 +265,7 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
 
             // Generate Decryption Link
             const urlEncodedData = encodeURIComponent(base64EncryptedData);
-            const decryptionLink = `${window.location.origin}/decrypt.html?data=${urlEncodedData}`;
+            const decryptionLink = `${window.location.origin}/decrypt?data=${urlEncodedData}`;
             document.getElementById('decryptionLink').value = decryptionLink;
             autoResizeBox(document.getElementById('decryptionLink'));
 
