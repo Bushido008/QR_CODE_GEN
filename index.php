@@ -112,6 +112,8 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
         <!-- QR Code Display -->
         <h3>QR Code of Encrypted Output:</h3>
         <canvas id="qrcodeCanvas"></canvas>
+        <img id="qrcodeImage" style="display:none; margin: 20px auto; max-width: 100%; height: auto;" alt="QR Code Image"/>
+        <button id="downloadQrBtn" class="button" style="display:none;">Download QR Code</button>
 
         <!-- Link to Decryption Page -->
         <h3>Decryption Link:</h3>
@@ -215,6 +217,33 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
                 }
             }
         }
+
+        // After drawing, show the download button and allow saving as an image
+        convertCanvasToImage();
+    }
+
+    // Convert canvas to image and make the download link available
+    function convertCanvasToImage() {
+        const canvas = document.getElementById('qrcodeCanvas');
+        const img = document.getElementById('qrcodeImage');
+        const downloadBtn = document.getElementById('downloadQrBtn');
+
+        // Convert canvas to a data URL (base64 encoded image)
+        const dataUrl = canvas.toDataURL('image/png');
+
+        // Set the img src to the canvas data
+        img.src = dataUrl;
+        img.style.display = 'block'; // Show the image element
+
+        // Show the download button and link it to the data URL
+        downloadBtn.style.display = 'block';
+        downloadBtn.addEventListener('click', function() {
+            // Create a temporary download link
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = 'qr_code.png'; // Set the default filename
+            link.click(); // Simulate a click to trigger download
+        });
     }
 
     // Encryption Section
