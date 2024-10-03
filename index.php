@@ -66,27 +66,6 @@ if ($local_commit !== $remote_commit) {
             border-color: #3498db;
             outline: none;
         }
-        /* Removed button styles since we're removing the button */
-        /*
-        button {
-            width: 100%;
-            padding: 12px;
-            background-color: #3498db;
-            color: #ffffff;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        button:hover {
-            background-color: #2980b9;
-        }
-        button:active {
-            background-color: #1f6391;
-        }
-        */
         h3 {
             margin-top: 25px;
             margin-bottom: 10px;
@@ -129,8 +108,6 @@ if ($local_commit !== $remote_commit) {
         <h1>QR & Data Encryption</h1>
         <textarea id="inputTextEncrypt" placeholder="Enter Data to Encrypt (Text, Emojis, Symbols, etc.)"></textarea>
         <input type="text" id="keyEncrypt" placeholder="Enter Key"/>
-        <!-- Removed the Encrypt button -->
-        <!-- <button id="compressEncryptBtn">Encrypt</button> -->
 
         <!-- Encrypted Output Section -->
         <div id="encryptedOutputSection" style="display:none;">
@@ -287,8 +264,8 @@ if ($local_commit !== $remote_commit) {
         const textToEncrypt = document.getElementById('inputTextEncrypt').value;
         const key = document.getElementById('keyEncrypt').value;
 
-        if (!textToEncrypt && !key) {
-            // Both fields are empty, clear all outputs and hide sections
+        // Hide everything if either input or key is empty
+        if (!textToEncrypt || !key) {
             document.getElementById('encryptedOutput').value = '';
             document.getElementById('encryptedOutputSection').style.display = 'none';
 
@@ -299,15 +276,10 @@ if ($local_commit !== $remote_commit) {
             document.getElementById('qrcodeImage').src = '';
             document.getElementById('qrCodeSection').style.display = 'none';
 
-            // Also clear the QR code canvas
+            // Clear the QR code canvas
             const canvas = document.getElementById('qrcodeCanvas');
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            return;
-        }
-
-        if (!textToEncrypt || !key) {
-            // If either field is empty, do not proceed
             return;
         }
 
