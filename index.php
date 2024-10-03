@@ -111,7 +111,7 @@ if ($local_commit !== $remote_commit) {
 
     <div class="section">
         <h1>QR & Data Encryption</h1>
-        <textarea id="inputTextEncrypt" placeholder="Enter text to compress and encrypt"></textarea>
+        <textarea id="inputTextEncrypt" placeholder="Enter Data to Encrypt"></textarea>
         <input type="text" id="keyEncrypt" placeholder="Enter Key"/>
         <button id="compressEncryptBtn">Encrypt</button>
 
