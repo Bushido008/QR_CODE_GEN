@@ -484,7 +484,7 @@ if ($local_commit !== $remote_commit) {
         }
     }
 
-    // Function to trim data to fit into QR code
+    // Function to trim data to fit into QR code (with exponential character removal)
     async function trimDataToFit() {
         let textToEncrypt = document.getElementById('inputTextEncrypt').value;
         const key = document.getElementById('keyEncrypt').value;
@@ -506,10 +506,27 @@ if ($local_commit !== $remote_commit) {
         let dataSize = parseInt(document.getElementById('dataSize').textContent);
         document.getElementById('currentSize').textContent = dataSize;
 
-        // Keep trimming one character at a time from the end
+        // Keep trimming characters from the end
         while (textToEncrypt.length > 0) {
-            // Remove last character
-            textToEncrypt = textToEncrypt.slice(0, -1);
+            // Calculate how much we need to remove
+            let excessSize = dataSize - qrCapacity;
+
+            if (excessSize <= 0) {
+                // Data now fits
+                break;
+            }
+
+            // Estimate number of characters to remove
+            // Remove a fraction of the remaining text based on how far we are from the target
+            let totalChars = textToEncrypt.length;
+            let fractionToRemove = Math.min(0.5, excessSize / dataSize); // Limit fraction to at most 0.5
+            let charsToRemove = Math.ceil(totalChars * fractionToRemove);
+
+            // Ensure at least one character is removed
+            charsToRemove = Math.max(charsToRemove, 1);
+
+            // Remove charsToRemove characters from the end
+            textToEncrypt = textToEncrypt.slice(0, -charsToRemove);
 
             // Update the input field
             document.getElementById('inputTextEncrypt').value = textToEncrypt;
@@ -522,12 +539,6 @@ if ($local_commit !== $remote_commit) {
             dataSize = parseInt(document.getElementById('dataSize').textContent);
             document.getElementById('currentSize').textContent = dataSize;
 
-            // Check if data now fits into QR code
-            if (dataSize <= qrCapacity) {
-                // Data now fits
-                break;
-            }
-
             // Small delay to allow UI to update (optional)
             await new Promise(resolve => setTimeout(resolve, 10));
         }
@@ -535,7 +546,6 @@ if ($local_commit !== $remote_commit) {
         // Hide the trimming overlay animation
         document.getElementById('trimmingOverlay').style.display = 'none';
     }
-
     // Apply auto-resize to all textareas and input fields
     const inputFields = [
         document.getElementById('inputTextEncrypt'),
