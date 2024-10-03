@@ -32,7 +32,6 @@ if ($local_commit !== $remote_commit) {
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        /* Include your existing styles */
         /* Global Styles */
         body {
             font-family: 'Roboto', sans-serif;
@@ -67,6 +66,8 @@ if ($local_commit !== $remote_commit) {
             border-color: #3498db;
             outline: none;
         }
+        /* Removed button styles since we're removing the button */
+        /*
         button {
             width: 100%;
             padding: 12px;
@@ -85,6 +86,7 @@ if ($local_commit !== $remote_commit) {
         button:active {
             background-color: #1f6391;
         }
+        */
         h3 {
             margin-top: 25px;
             margin-bottom: 10px;
@@ -127,7 +129,8 @@ if ($local_commit !== $remote_commit) {
         <h1>QR & Data Encryption</h1>
         <textarea id="inputTextEncrypt" placeholder="Enter Data to Encrypt (Text, Emojis, Symbols, etc.)"></textarea>
         <input type="text" id="keyEncrypt" placeholder="Enter Key"/>
-        <button id="compressEncryptBtn">Encrypt</button>
+        <!-- Removed the Encrypt button -->
+        <!-- <button id="compressEncryptBtn">Encrypt</button> -->
 
         <!-- Encrypted Output Section -->
         <div id="encryptedOutputSection" style="display:none;">
@@ -279,7 +282,8 @@ if ($local_commit !== $remote_commit) {
         });
     }
 
-    document.getElementById('compressEncryptBtn').addEventListener('click', async () => {
+    // Function to update encryption output whenever input changes
+    async function updateEncryption() {
         const textToEncrypt = document.getElementById('inputTextEncrypt').value;
         const key = document.getElementById('keyEncrypt').value;
 
@@ -303,7 +307,7 @@ if ($local_commit !== $remote_commit) {
         }
 
         if (!textToEncrypt || !key) {
-            alert('Please enter both text and key.');
+            // If either field is empty, do not proceed
             return;
         }
 
@@ -358,8 +362,7 @@ if ($local_commit !== $remote_commit) {
             console.error('Encryption Error:', error);
             alert('An error occurred during encryption.');
         }
-    });
-
+    }
 
     // Apply auto-resize to all textareas and input fields
     const inputFields = [
@@ -369,6 +372,10 @@ if ($local_commit !== $remote_commit) {
     ];
 
     inputFields.forEach(applyAutoResize);
+
+    // Add input event listeners to update encryption live
+    document.getElementById('inputTextEncrypt').addEventListener('input', updateEncryption);
+    document.getElementById('keyEncrypt').addEventListener('input', updateEncryption);
 </script>
 
 </body>
