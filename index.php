@@ -24,7 +24,7 @@ if ($local_commit !== $remote_commit) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Include your existing head content -->
+    <!-- Existing head content -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Encryption</title>
@@ -132,6 +132,42 @@ if ($local_commit !== $remote_commit) {
             margin-top: 10px;
             font-weight: bold;
         }
+        /* Trimming Overlay Styles */
+        #trimmingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.75);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #trimmingOverlay .animation-container {
+            text-align: center;
+            color: #fff;
+        }
+        /* Spinner Animation */
+        .spinner {
+            margin: 0 auto 20px auto;
+            width: 80px;
+            height: 80px;
+            border: 10px solid #f3f3f3;
+            border-top: 10px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Byte counter styling */
+        #byteInfo {
+            margin-top: 10px;
+            font-size: 1.2em;
+        }
     </style>
 </head>
 <body>
@@ -149,7 +185,7 @@ if ($local_commit !== $remote_commit) {
             <textarea id="encryptedOutput" readonly onclick="this.select()"></textarea>
             <!-- New section for data size and QR code capacity -->
             <div id="dataInfo">
-                <p style="display:none;">Data Size: <span id="dataSize"></span> bytes</p>
+                <p>Data Size: <span id="dataSize"></span> bytes</p>
                 <p>QR Code Capacity: <span id="qrCapacity"></span> bytes</p>
                 <p>Used: <span id="dataUsed"></span> / <span id="qrCapacityCopy"></span> bytes</p>
             </div>
@@ -172,6 +208,18 @@ if ($local_commit !== $remote_commit) {
         <!-- Decryption Link Section -->
         <div id="decryptionLinkSection" style="display:none;">
             <a id="decryptionLink" class="link" href="#" target="_blank">Decryption Link</a>
+        </div>
+    </div>
+</div>
+
+<!-- Trimming Overlay -->
+<div id="trimmingOverlay">
+    <div class="animation-container">
+        <div class="spinner"></div>
+        <p>Trimming data to fit...</p>
+        <div id="byteInfo">
+            Current Size: <span id="currentSize">0</span> bytes<br>
+            Target Size: <span id="targetSize">0</span> bytes
         </div>
     </div>
 </div>
@@ -445,6 +493,19 @@ if ($local_commit !== $remote_commit) {
             return;
         }
 
+        // Show the trimming overlay animation
+        document.getElementById('trimmingOverlay').style.display = 'flex';
+
+        // Set target size
+        const qrCapacity = parseInt(document.getElementById('qrCapacity').textContent);
+        document.getElementById('targetSize').textContent = qrCapacity;
+
+        // Allow UI to update before starting the trimming loop
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        let dataSize = parseInt(document.getElementById('dataSize').textContent);
+        document.getElementById('currentSize').textContent = dataSize;
+
         // Keep trimming one character at a time from the end
         while (textToEncrypt.length > 0) {
             // Remove last character
@@ -457,15 +518,22 @@ if ($local_commit !== $remote_commit) {
             // Recalculate encryption and check if data fits
             await updateEncryption();
 
-            // Check if data now fits into QR code
-            const dataSize = parseInt(document.getElementById('dataSize').textContent);
-            const qrCapacity = parseInt(document.getElementById('qrCapacity').textContent);
+            // Update current size in overlay
+            dataSize = parseInt(document.getElementById('dataSize').textContent);
+            document.getElementById('currentSize').textContent = dataSize;
 
+            // Check if data now fits into QR code
             if (dataSize <= qrCapacity) {
                 // Data now fits
                 break;
             }
+
+            // Small delay to allow UI to update (optional)
+            await new Promise(resolve => setTimeout(resolve, 10));
         }
+
+        // Hide the trimming overlay animation
+        document.getElementById('trimmingOverlay').style.display = 'none';
     }
 
     // Apply auto-resize to all textareas and input fields
@@ -483,7 +551,6 @@ if ($local_commit !== $remote_commit) {
 
     // Add click event listener to the Trim button
     document.getElementById('trimButton').addEventListener('click', trimDataToFit);
-
 </script>
 
 </body>
