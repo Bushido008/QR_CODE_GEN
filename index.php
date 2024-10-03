@@ -98,7 +98,8 @@ if ($local_commit !== $remote_commit) {
             height: auto;   /* Maintain aspect ratio */
         }
         .link {
-            font-size: 2em; /* Same as the default h2 font size */
+            margin-top: 10px;
+            font-size: 1em; /* Same as the default h2 font size */
             font-weight: 500; /* You can adjust this to match your h2 font weight */
             color: #3498db; /* Optional: Change the color of the link */
             text-decoration: none; /* Remove underline from the link */
