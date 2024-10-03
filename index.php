@@ -248,7 +248,6 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
     }
 
 
-    // Encryption Section
     document.getElementById('compressEncryptBtn').addEventListener('click', async () => {
         try {
             const textToEncrypt = document.getElementById('inputTextEncrypt').value;
@@ -274,11 +273,11 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
             // Generate a random salt
             const salt = crypto.getRandomValues(new Uint8Array(16));
 
-            // Derive AES-256 Key from key
-            const key = await deriveKey(key, salt);
+            // Derive AES-256 Key from the provided key
+            const encryptionKey = await deriveKey(key, salt);
 
             // Encrypt the data
-            const { encryptedData, iv } = await encryptData(key, dataToEncrypt);
+            const { encryptedData, iv } = await encryptData(encryptionKey, dataToEncrypt);
 
             // Prepare the combined data
             // Structure: [compressionFlag][salt][iv][encryptedData]
@@ -310,6 +309,7 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
             alert('An error occurred during encryption.');
         }
     });
+
 
     // Apply auto-resize to all textareas and input fields
     const inputFields = [
