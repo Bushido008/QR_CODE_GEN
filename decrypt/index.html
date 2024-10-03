@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!-- Added viewport meta tag for mobile responsiveness -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>QR Decryption</title>
     <!-- Include Google Fonts -->
     <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -74,6 +76,33 @@
             padding: 20px;
             margin-top: 40px;
             color: #95a5a6;
+        }
+        /* Responsive Styles */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+            h2 {
+                font-size: 20px;
+            }
+            h3 {
+                font-size: 18px;
+            }
+            textarea, input[type="text"] {
+                font-size: 14px;
+                padding: 10px;
+            }
+            button {
+                font-size: 14px;
+                padding: 10px;
+            }
+            .container {
+                max-width: 100%;
+            }
         }
     </style>
 </head>
