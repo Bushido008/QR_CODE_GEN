@@ -149,7 +149,7 @@ if ($local_commit !== $remote_commit) {
             <textarea id="encryptedOutput" readonly onclick="this.select()"></textarea>
             <!-- New section for data size and QR code capacity -->
             <div id="dataInfo">
-                <p>Data Size: <span id="dataSize"></span> bytes</p>
+                <p style="display:none;">Data Size: <span id="dataSize"></span> bytes</p>
                 <p>QR Code Capacity: <span id="qrCapacity"></span> bytes</p>
                 <p>Used: <span id="dataUsed"></span> / <span id="qrCapacityCopy"></span> bytes</p>
             </div>
@@ -389,7 +389,7 @@ if ($local_commit !== $remote_commit) {
             const dataSize = dataBytes.length;
 
             // QR Code capacity in bytes for version 40, error correction level M
-            const qrCapacity = 2953; // Maximum capacity in bytes for byte mode
+            const qrCapacity = 2331; // Maximum capacity in bytes for byte mode
 
             // Update the data size and capacity display
             document.getElementById('dataSize').textContent = dataSize;
