@@ -475,16 +475,18 @@ if ($local_commit !== $remote_commit) {
             alert('An error occurred during encryption.');
         }
     }
-
     // Function to get QR code capacity based on version and error correction level
     function getQrCodeCapacity(version) {
-        // This is a simplified estimation using maximum capacity for byte mode with error correction level M
+        // Maximum data capacity for byte mode with error correction level M (15%)
         const capacityTable = {
-            1: 17, 2: 32, 3: 53, 4: 78, 5: 106, 6: 134, 7: 154, 8: 192, 9: 230, 10: 271,
-            11: 321, 12: 367, 13: 425, 14: 458, 15: 520, 16: 586, 17: 644, 18: 718, 19: 792,
-            20: 858, 21: 929, 22: 1003, 23: 1091, 24: 1171, 25: 1273, 26: 1367, 27: 1465,
-            28: 1528, 29: 1628, 30: 1732, 31: 1840, 32: 1952, 33: 2068, 34: 2188, 35: 2303,
-            36: 2431, 37: 2563, 38: 2699, 39: 2809, 40: 2953
+            1: 14,   2: 26,    3: 42,    4: 62,    5: 84,
+            6: 106,  7: 122,   8: 152,   9: 180,   10: 213,
+            11: 251, 12: 287,  13: 331,  14: 362,  15: 412,
+            16: 450, 17: 504,  18: 560,  19: 624,  20: 666,
+            21: 711, 22: 779,  23: 857,  24: 911,  25: 997,
+            26: 1059,27: 1125, 28: 1190, 29: 1264, 30: 1370,
+            31: 1452,32: 1538, 33: 1628, 34: 1722, 35: 1809,
+            36: 1911,37: 1989, 38: 2099, 39: 2213, 40: 2331
         };
         return capacityTable[version] || 'Unknown';
     }
