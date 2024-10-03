@@ -129,10 +129,10 @@ if ($local_commit !== $remote_commit) {
             <button id="downloadQrBtn" class="button" style="display:none;">Download QR Code</button>
         </div>
 
-        <!-- Link to Decryption Page -->
+        <!-- Decryption Link Section -->
         <div id="decryptionLinkSection" style="display:none;">
             <h3>Decryption Link:</h3>
-            <a id="decryptionLink" href="#" target="_blank"></a>
+            <a id="decryptionLink" href="#" target="_blank">Decryption Link</a>
         </div>
     </div>
 </div>
@@ -335,7 +335,7 @@ if ($local_commit !== $remote_commit) {
             const urlEncodedData = encodeURIComponent(base64EncryptedData);
             const decryptionLink = `${window.location.origin}/decrypt?data=${urlEncodedData}`;
             document.getElementById('decryptionLink').href = decryptionLink;
-            document.getElementById('decryptionLink').textContent = decryptionLink;
+            document.getElementById('decryptionLink').textContent = 'Decryption Link';
             document.getElementById('decryptionLinkSection').style.display = 'block';
 
             // Generate and display the QR code with the decryption link
@@ -346,6 +346,7 @@ if ($local_commit !== $remote_commit) {
             alert('An error occurred during encryption.');
         }
     });
+
 
     // Apply auto-resize to all textareas and input fields
     const inputFields = [
