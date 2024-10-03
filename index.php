@@ -103,6 +103,7 @@ if ($local_commit !== $remote_commit) {
             font-weight: 500; /* You can adjust this to match your h2 font weight */
             color: #3498db; /* Optional: Change the color of the link */
             text-decoration: none; /* Remove underline from the link */
+            text-align: center;
         }
         .link:hover {
             text-decoration: underline; /* Optional: Add underline on hover */
