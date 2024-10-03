@@ -85,6 +85,8 @@ if (isset($_GET['update']) && $_GET['update'] === '3403') {
         #qrcodeCanvas {
             display: block;
             margin: 20px auto;
+            max-width: 100%; /* Ensure it doesn't exceed the screen width */
+            height: auto;   /* Maintain aspect ratio */
         }
         footer {
             text-align: center;
