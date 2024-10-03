@@ -92,6 +92,28 @@ if ($local_commit !== $remote_commit) {
             text-decoration: underline; /* Optional: Add underline on hover */
             color: #2980b9; /* Change the color on hover */
         }
+        button {
+            display: block;  /* Center the button */
+            margin: 0 auto;  /* Center the button horizontally */
+            padding: 12px;
+            background-color: #3498db;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: auto; /* Adjust the width as needed */
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button:active {
+            background-color: #1f6391;
+        }
         footer {
             text-align: center;
             padding: 20px;
