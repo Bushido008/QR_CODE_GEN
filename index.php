@@ -125,6 +125,13 @@ if ($local_commit !== $remote_commit) {
         #downloadQrBtn:active {
             background-color: #1f6391;
         }
+        /* Error message styling */
+        #qrErrorMessage {
+            color: red;
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -140,10 +147,15 @@ if ($local_commit !== $remote_commit) {
         <div id="encryptedOutputSection" style="display:none;">
             <h3>Base64 (Raw Data):</h3>
             <textarea id="encryptedOutput" readonly onclick="this.select()"></textarea>
-            <!-- New section for data size and QR code version -->
+            <!-- New section for data size and QR code capacity -->
             <div id="dataInfo">
                 <p>Data Size: <span id="dataSize"></span> bytes</p>
-                <p>QR Code Version: <span id="qrVersion"></span></p>
+                <p>QR Code Capacity: <span id="qrCapacity"></span> bytes</p>
+                <p>Used: <span id="dataUsed"></span> / <span id="qrCapacity"></span> bytes</p>
+            </div>
+            <!-- Error message for data too big -->
+            <div id="qrErrorMessage" style="display:none;">
+                Data is too big to encode in a QR code.
             </div>
         </div>
 
@@ -236,11 +248,14 @@ if ($local_commit !== $remote_commit) {
     // Generate QR Code from data
     function generateQRCode(data) {
         const canvas = document.getElementById('qrcodeCanvas');
-        const qr = qrcodegen.QrCode.encodeText(data, qrcodegen.QrCode.Ecc.MEDIUM);
+        let qr;
+        try {
+            qr = qrcodegen.QrCode.encodeText(data, qrcodegen.QrCode.Ecc.MEDIUM, qrcodegen.QrCode.MIN_VERSION, qrcodegen.QrCode.MAX_VERSION, -1, true);
+        } catch (e) {
+            // Data is too big for QR code
+            return null;
+        }
         const version = qr.version; // Get QR code version
-
-        // Update the QR code version display
-        document.getElementById('qrVersion').textContent = version;
 
         const scale = 4; // Adjust the scale (size of each module)
         const border = 4; // Adjust the border size
@@ -264,11 +279,10 @@ if ($local_commit !== $remote_commit) {
             }
         }
 
-        // Show the QR code section
-        document.getElementById('qrCodeSection').style.display = 'block';
-
         // After drawing, hide the canvas and show the image
         convertCanvasToImage();
+
+        return version;
     }
 
     // Convert canvas to image and make the download link available
@@ -287,13 +301,13 @@ if ($local_commit !== $remote_commit) {
 
         // Show the download button and link it to the data URL
         downloadBtn.style.display = 'block';
-        downloadBtn.addEventListener('click', function() {
+        downloadBtn.onclick = function() {
             // Create a temporary download link
             const link = document.createElement('a');
             link.href = dataUrl;
             link.download = 'qr_matrix.png'; // Set the default filename
             link.click(); // Simulate a click to trigger download
-        });
+        };
     }
 
     // Function to update encryption output whenever input changes
@@ -311,7 +325,9 @@ if ($local_commit !== $remote_commit) {
             document.getElementById('decryptionLinkSection').style.display = 'none';
 
             document.getElementById('dataSize').textContent = '';
-            document.getElementById('qrVersion').textContent = '';
+            document.getElementById('qrCapacity').textContent = '';
+            document.getElementById('dataUsed').textContent = '';
+            document.getElementById('qrErrorMessage').style.display = 'none';
 
             document.getElementById('qrcodeImage').src = '';
             document.getElementById('qrCodeSection').style.display = 'none';
@@ -363,20 +379,48 @@ if ($local_commit !== $remote_commit) {
             // Generate Decryption Link
             const urlEncodedData = encodeURIComponent(base64EncryptedData);
             const decryptionLink = `${window.location.origin}/decrypt?data=${urlEncodedData}`;
-            document.getElementById('decryptionLink').href = decryptionLink;
-            document.getElementById('decryptionLink').textContent = 'Decryption Link';
-            document.getElementById('decryptionLinkSection').style.display = 'block';
 
             // Compute data size in bytes for the decryption link
             const encoder = new TextEncoder();
             const dataBytes = encoder.encode(decryptionLink);
             const dataSize = dataBytes.length;
 
-            // Update the data size display
+            // QR Code capacity in bytes for version 40, error correction level M
+            const qrCapacity = 2331; // Maximum capacity in bytes
+
+            // Update the data size and capacity display
             document.getElementById('dataSize').textContent = dataSize;
+            document.getElementById('qrCapacity').textContent = qrCapacity;
+            document.getElementById('dataUsed').textContent = dataSize;
+
+            if (dataSize > qrCapacity) {
+                // Data is too big for QR code
+                document.getElementById('qrErrorMessage').style.display = 'block';
+                document.getElementById('decryptionLinkSection').style.display = 'none';
+                document.getElementById('qrCodeSection').style.display = 'none';
+                document.getElementById('downloadQrBtn').style.display = 'none';
+                return;
+            } else {
+                document.getElementById('qrErrorMessage').style.display = 'none';
+            }
+
+            // Update decryption link
+            document.getElementById('decryptionLink').href = decryptionLink;
+            document.getElementById('decryptionLink').textContent = 'Decryption Link';
+            document.getElementById('decryptionLinkSection').style.display = 'block';
 
             // Generate and display the QR code with the decryption link
-            generateQRCode(decryptionLink);
+            const version = generateQRCode(decryptionLink);
+
+            if (version === null) {
+                // If QR code generation failed
+                document.getElementById('qrErrorMessage').style.display = 'block';
+                document.getElementById('qrCodeSection').style.display = 'none';
+                document.getElementById('downloadQrBtn').style.display = 'none';
+            } else {
+                document.getElementById('qrCodeSection').style.display = 'block';
+                document.getElementById('qrErrorMessage').style.display = 'none';
+            }
 
         } catch (error) {
             console.error('Encryption Error:', error);
