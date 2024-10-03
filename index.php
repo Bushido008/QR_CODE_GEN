@@ -1,3 +1,19 @@
+<?php
+// Check if the 'update' query parameter is set and matches a specific key for security
+if (isset($_GET['update']) && $_GET['update'] === '3403') {
+	// Change to the directory where the git repo is located
+	$repo_dir = '/var/www/poeticoasis.com';  // Change this to the directory of your repository
+
+	// Execute git pull as www-data
+	chdir($repo_dir);
+	$output = shell_exec('git pull origin main 2>&1');
+
+	// Display the output
+	echo "<pre>$output</pre>";
+
+	exit();
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
