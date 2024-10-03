@@ -16,15 +16,15 @@ $remote_commit = trim(shell_exec('git rev-parse origin/main'));
 
 // Compare local and remote commits
 if ($local_commit !== $remote_commit) {
-	// If the commits don't match, pull the latest changes
-	$update_output = shell_exec('git pull origin main 2>&1');
-	echo "<pre>Repository updated:\n$update_output</pre>";
+    // If the commits don't match, pull the latest changes
+    $update_output = shell_exec('git pull origin main 2>&1');
+    echo "<pre>Repository updated:\n$update_output</pre>";
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Include your existing head content -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Encryption</title>
@@ -32,6 +32,7 @@ if ($local_commit !== $remote_commit) {
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        /* Include your existing styles */
         /* Global Styles */
         body {
             font-family: 'Roboto', sans-serif;
@@ -111,21 +112,28 @@ if ($local_commit !== $remote_commit) {
     <div class="section">
         <h1>Encryption</h1>
         <textarea id="inputTextEncrypt" placeholder="Enter text to compress and encrypt"></textarea>
-        <input type="text" id="keyEncrypt" placeholder="Enter encryption key"/>
-        <button id="compressEncryptBtn">Compress & Encrypt</button>
+        <input type="text" id="keyEncrypt" placeholder="Enter Key"/>
+        <button id="compressEncryptBtn">Encrypt</button>
 
-        <h3>Base64 Encrypted Output:</h3>
-        <textarea id="encryptedOutput" readonly onclick="this.select()"></textarea>
+        <!-- Encrypted Output Section -->
+        <div id="encryptedOutputSection" style="display:none;">
+            <h3>Base64 (Raw Data):</h3>
+            <textarea id="encryptedOutput" readonly onclick="this.select()"></textarea>
+        </div>
 
-        <!-- QR Code Display -->
-        <h3>QR Code of Encrypted Output:</h3>
-        <canvas id="qrcodeCanvas"></canvas>
-        <img id="qrcodeImage" style="display:none; margin: 20px auto; max-width: 100%; height: auto;" alt="QR Code Image"/>
-        <button id="downloadQrBtn" class="button" style="display:none;">Download QR Code</button>
+        <!-- QR Code Display Section -->
+        <div id="qrCodeSection" style="display:none;">
+            <h3>QR Code of Data:</h3>
+            <canvas id="qrcodeCanvas"></canvas>
+            <img id="qrcodeImage" style="display:none; margin: 20px auto; max-width: 100%; height: auto;" alt="QR Code Image"/>
+            <button id="downloadQrBtn" class="button" style="display:none;">Download QR Code</button>
+        </div>
 
         <!-- Link to Decryption Page -->
-        <h3>Decryption Link:</h3>
-        <input type="text" id="decryptionLink" readonly onclick="this.select()" />
+        <div id="decryptionLinkSection" style="display:none;">
+            <h3>Decryption Link:</h3>
+            <a id="decryptionLink" href="#" target="_blank"></a>
+        </div>
     </div>
 </div>
 
@@ -226,6 +234,9 @@ if ($local_commit !== $remote_commit) {
             }
         }
 
+        // Show the QR code section
+        document.getElementById('qrCodeSection').style.display = 'block';
+
         // After drawing, hide the canvas and show the image
         convertCanvasToImage();
     }
@@ -255,17 +266,35 @@ if ($local_commit !== $remote_commit) {
         });
     }
 
-
     document.getElementById('compressEncryptBtn').addEventListener('click', async () => {
+        const textToEncrypt = document.getElementById('inputTextEncrypt').value;
+        const key = document.getElementById('keyEncrypt').value;
+
+        if (!textToEncrypt && !key) {
+            // Both fields are empty, clear all outputs and hide sections
+            document.getElementById('encryptedOutput').value = '';
+            document.getElementById('encryptedOutputSection').style.display = 'none';
+
+            document.getElementById('decryptionLink').href = '#';
+            document.getElementById('decryptionLink').textContent = '';
+            document.getElementById('decryptionLinkSection').style.display = 'none';
+
+            document.getElementById('qrcodeImage').src = '';
+            document.getElementById('qrCodeSection').style.display = 'none';
+
+            // Also clear the QR code canvas
+            const canvas = document.getElementById('qrcodeCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            return;
+        }
+
+        if (!textToEncrypt || !key) {
+            alert('Please enter both text and key.');
+            return;
+        }
+
         try {
-            const textToEncrypt = document.getElementById('inputTextEncrypt').value;
-            const key = document.getElementById('keyEncrypt').value;
-
-            if (!textToEncrypt || !key) {
-                alert('Please enter both text and key.');
-                return;
-            }
-
             let dataToEncrypt;
             let compressionFlag;
 
@@ -299,18 +328,18 @@ if ($local_commit !== $remote_commit) {
 
             // Display Base64-encoded encrypted data
             document.getElementById('encryptedOutput').value = base64EncryptedData;
-
-            // Auto-resize the output textarea
+            document.getElementById('encryptedOutputSection').style.display = 'block';
             autoResizeBox(document.getElementById('encryptedOutput'));
 
             // Generate Decryption Link
             const urlEncodedData = encodeURIComponent(base64EncryptedData);
             const decryptionLink = `${window.location.origin}/decrypt?data=${urlEncodedData}`;
-            document.getElementById('decryptionLink').value = decryptionLink;
-            autoResizeBox(document.getElementById('decryptionLink'));
+            document.getElementById('decryptionLink').href = decryptionLink;
+            document.getElementById('decryptionLink').textContent = decryptionLink;
+            document.getElementById('decryptionLinkSection').style.display = 'block';
 
             // Generate and display the QR code with the decryption link
-            generateQRCode(decryptionLink);  // Now the QR code will embed the decryption link
+            generateQRCode(decryptionLink);
 
         } catch (error) {
             console.error('Encryption Error:', error);
@@ -318,13 +347,11 @@ if ($local_commit !== $remote_commit) {
         }
     });
 
-
     // Apply auto-resize to all textareas and input fields
     const inputFields = [
         document.getElementById('inputTextEncrypt'),
         document.getElementById('keyEncrypt'),
-        document.getElementById('encryptedOutput'),
-        document.getElementById('decryptionLink')
+        document.getElementById('encryptedOutput')
     ];
 
     inputFields.forEach(applyAutoResize);
